@@ -654,8 +654,7 @@ table.vigia-table tbody td {
   box-shadow: 0 2px 10px rgba(26,86,219,0.30);
 }
 
-.tab-pane { display: none; }
-.tab-pane.active { display: block; }
+
 
 /* =====================================================
    ALERTS TABLE (dashboard)
@@ -875,4 +874,26 @@ table.vigia-table tbody td {
   background-repeat: no-repeat;
   background-position: center;
   flex-shrink: 0;
+}
+/* FIX BOOTSTRAP TABS */
+.tab-pane {
+  display: none;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+.tab-pane.fade {
+  opacity: 0;
+  transition: opacity 0.15s linear;
+}
+
+.tab-pane.fade.show {
+  opacity: 1;
+}
+
+.tab-pane.fade.show.active {
+  display: block;
+  opacity: 1;
 }
