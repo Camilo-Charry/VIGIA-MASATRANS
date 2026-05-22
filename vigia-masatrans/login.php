@@ -1,147 +1,79 @@
 <?php
-
 session_start();
-
 include("config/database.php");
-
 $error = "";
-
 if(isset($_POST['login'])){
-
-    $usuario = $_POST['usuario'];
+    $usuario = mysqli_real_escape_string($conn, $_POST['usuario']);
     $password = md5($_POST['password']);
-
-    $query = "
-
-    SELECT * FROM usuarios
-
-    WHERE usuario='$usuario'
-    AND password='$password'
-    AND estado='ACTIVO'
-
-    ";
-
+    $query = "SELECT * FROM usuarios WHERE usuario='$usuario' AND password='$password' AND estado='ACTIVO'";
     $resultado = mysqli_query($conn,$query);
-
     if(mysqli_num_rows($resultado) > 0){
-
         $datos = mysqli_fetch_assoc($resultado);
-
-        $_SESSION['id'] = $datos['id'];
+        $_SESSION['id']     = $datos['id'];
         $_SESSION['nombre'] = $datos['nombre'];
-
+        $_SESSION['rol']    = $datos['rol'];
         header("Location: dashboard.php");
-
-    }else{
-
+        exit();
+    } else {
         $error = "Usuario o contraseña incorrectos";
-
     }
-
 }
-
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Login | VIGIA MASATRANS</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
+<title>Iniciar Sesión | VIGIA MASATRANS</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
 <style>
-
-body{
-    background:#0f172a;
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    font-family:Arial;
-}
-
-.login-box{
-    background:white;
-    width:400px;
-    padding:40px;
-    border-radius:20px;
-}
-
-.logo{
-    text-align:center;
-    font-size:28px;
-    font-weight:bold;
-    color:#2563eb;
-    margin-bottom:30px;
-}
-
+  .login-page { background: #0a1628; }
 </style>
-
 </head>
 <body>
+<div class="login-page">
 
-<div class="login-box shadow">
+  <div class="login-box">
 
-    <div class="logo">
-        VIGIA MASATRANS
+    <div class="login-brand">
+      <div class="brand-icon">🚛</div>
+      <h1>VIGIA MASATRANS</h1>
+      <p>Sistema de Gestión HSEQ &amp; Talento Humano</p>
     </div>
 
-    <?php if($error != ""){ ?>
+    <?php if($error): ?>
+    <div class="alert-msg error">
+      ⚠️ <?= htmlspecialchars($error) ?>
+    </div>
+    <?php endif; ?>
 
-        <div class="alert alert-danger">
+    <form method="POST" autocomplete="off">
 
-            <?= $error ?>
+      <div class="field">
+        <label class="form-label">Usuario</label>
+        <input type="text" name="usuario" class="form-control"
+               placeholder="Ingrese su usuario" required autofocus>
+      </div>
 
-        </div>
+      <div class="field">
+        <label class="form-label">Contraseña</label>
+        <input type="password" name="password" class="form-control"
+               placeholder="••••••••" required>
+      </div>
 
-    <?php } ?>
-
-    <form method="POST">
-
-        <div class="mb-3">
-
-            <label>
-                Usuario
-            </label>
-
-            <input
-            type="text"
-            name="usuario"
-            class="form-control"
-            required>
-
-        </div>
-
-        <div class="mb-4">
-
-            <label>
-                Contraseña
-            </label>
-
-            <input
-            type="password"
-            name="password"
-            class="form-control"
-            required>
-
-        </div>
-
-        <button
-        type="submit"
-        name="login"
-        class="btn btn-primary w-100">
-
-            Iniciar Sesión
-
-        </button>
+      <button type="submit" name="login" class="btn btn-primary w-100 btn-lg mt-3">
+        Iniciar Sesión →
+      </button>
 
     </form>
 
-</div>
+    <p style="text-align:center; margin-top:24px; font-size:12px; color:#94a3b8;">
+      MASATRANS S.A.S &nbsp;·&nbsp; Sistema protegido de acceso restringido
+    </p>
 
+  </div>
+
+</div>
 </body>
 </html>

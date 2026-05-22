@@ -27,8 +27,8 @@ if(isset($_POST['actualizar'])){
     $celular = $_POST['celular'];
     $correo = $_POST['correo'];
     $direccion = $_POST['direccion'];
-    $ciudad = $_POST['ciudad'];
-    $departamento = $_POST['departamento'];
+    $ciudad_residencia = $_POST['ciudad_residencia'];
+    $departamento_residencia = $_POST['departamento_residencia'];
     $eps = $_POST['eps'];
     $arl = $_POST['arl'];
     $pension = $_POST['pension'];
@@ -45,8 +45,8 @@ if(isset($_POST['actualizar'])){
     celular='$celular',
     correo='$correo',
     direccion='$direccion',
-    ciudad='$ciudad',
-    departamento='$departamento',
+    ciudad_residencia='$ciudad_residencia',
+    departamento_residencia='$departamento_residencia',
     eps='$eps',
     arl='$arl',
     pension='$pension',
@@ -92,19 +92,37 @@ href="../../assets/css/style.css">
 <body>
 
 <div class="sidebar">
-
-    <div class="logo">
+  <div class="sidebar-logo">
+    <div class="brand">
+      <div class="brand-logo"></div>
+      <span>
         VIGIA MASATRANS
+        <div class="brand-sub">Panel Corporativo</div>
+      </span>
     </div>
+  </div>
 
+  <nav class="sidebar-nav">
     <a href="../../dashboard.php">
-        📊 Dashboard
+      <span class="nav-icon">📊</span>
+      Dashboard
     </a>
-
-    <a href="empleados.php">
-        👷 Empleados
+    <a href="empleados.php" class="active">
+      <span class="nav-icon">👷</span>
+      Empleados
     </a>
+    <a href="../../logout.php">
+      <span class="nav-icon">🚪</span>
+      Cerrar sesión
+    </a>
+  </nav>
 
+  <div class="sidebar-footer">
+    <a href="../../dashboard.php">
+      <span class="nav-icon">ℹ️</span>
+      Control HSEQ
+    </a>
+  </div>
 </div>
 
 <div class="main-content">
@@ -229,9 +247,9 @@ href="../../assets/css/style.css">
 
                     <input
                     type="text"
-                    name="ciudad"
+                    name="ciudad_residencia"
                     class="form-control"
-                    value="<?= $empleado['ciudad'] ?>">
+                    value="<?= $empleado['ciudad_residencia'] ?>">
 
                 </div>
 
@@ -243,9 +261,9 @@ href="../../assets/css/style.css">
 
                     <input
                     type="text"
-                    name="departamento"
+                    name="departamento_residencia"
                     class="form-control"
-                    value="<?= $empleado['departamento'] ?>">
+                    value="<?= $empleado['departamento_residencia'] ?>">
 
                 </div>
 
@@ -317,7 +335,7 @@ href="../../assets/css/style.css">
             </button>
 
             <a href="perfil.php?id=<?= $id ?>"
-            class="btn btn-secondary">
+            class="btn btn-outline">
 
                 Volver
 

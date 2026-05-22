@@ -48,359 +48,181 @@ content="width=device-width, initial-scale=1.0">
 <title>Dashboard | VIGIA MASATRANS</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link rel="stylesheet"
-href="assets/css/style.css">
-
-<style>
-
-.card-dashboard{
-    border:none;
-    border-radius:25px;
-    color:white;
-    overflow:hidden;
-}
-
-.bg1{
-    background:linear-gradient(135deg,#2563eb,#1e40af);
-}
-
-.bg2{
-    background:linear-gradient(135deg,#dc2626,#991b1b);
-}
-
-.bg3{
-    background:linear-gradient(135deg,#f59e0b,#d97706);
-}
-
-.bg4{
-    background:linear-gradient(135deg,#16a34a,#166534);
-}
-
-.icon-box{
-    font-size:45px;
-    opacity:0.3;
-}
-
-.alert-card{
-    border:none;
-    border-radius:20px;
-}
-
-</style>
-
+<link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
 <!-- SIDEBAR -->
 
 <div class="sidebar">
+  <div class="sidebar-logo">
+  <div class="brand">
+  <div class="brand-logo"></div>
+  <span>
+    VIGIA MASATRANS
+    <div class="brand-sub">Panel Corporativo</div>
+  </span>
+</div>
+  </div>
 
-    <div class="logo">
-        VIGIA MASATRANS
-    </div>
-
-    <a href="dashboard.php">
-        📊 Dashboard
+  <nav class="sidebar-nav">
+    <a href="dashboard.php" class="active">
+      <span class="nav-icon">📊</span>
+      Dashboard
     </a>
-
     <a href="modules/empleados/empleados.php">
-        👷 Empleados
+      <span class="nav-icon">👷</span>
+      Empleados
     </a>
-
     <a href="logout.php">
-        🚪 Cerrar sesión
+      <span class="nav-icon">🚪</span>
+      Cerrar sesión
     </a>
+  </nav>
 
+  <div class="sidebar-footer">
+    <a href="dashboard.php">
+      <span class="nav-icon">ℹ️</span>
+      Control HSEQ
+    </a>
+  </div>
 </div>
 
 <!-- MAIN -->
 
 <div class="main-content">
 
-    <div class="mb-5">
-
-        <h1 class="fw-bold">
-            Dashboard HSEQ
-        </h1>
-
-        <p class="text-muted">
-            Panel ejecutivo • VIGIA MASATRANS
-        </p>
-
+  <section class="page-header">
+    <div class="page-header-left">
+      <h1>Dashboard HSEQ</h1>
+      <p>Panel ejecutivo para seguimiento de empleados, cursos y vacunas.</p>
     </div>
-
-    <!-- CARDS -->
-
-    <div class="row g-4 mb-5">
-
-        <div class="col-md-3">
-
-            <div class="card card-dashboard bg1 shadow">
-
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between">
-
-                        <div>
-
-                            <h6>
-                                Empleados
-                            </h6>
-
-                            <h1 class="fw-bold">
-
-                                <?= $empleados ?>
-
-                            </h1>
-
-                        </div>
-
-                        <div class="icon-box">
-                            👷
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card card-dashboard bg2 shadow">
-
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between">
-
-                        <div>
-
-                            <h6>
-                                Cursos Vencidos
-                            </h6>
-
-                            <h1 class="fw-bold">
-
-                                <?= $cursos_vencidos ?>
-
-                            </h1>
-
-                        </div>
-
-                        <div class="icon-box">
-                            🚨
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card card-dashboard bg3 shadow">
-
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between">
-
-                        <div>
-
-                            <h6>
-                                Por Vencer
-                            </h6>
-
-                            <h1 class="fw-bold">
-
-                                <?= $cursos_por_vencer ?>
-
-                            </h1>
-
-                        </div>
-
-                        <div class="icon-box">
-                            ⚠️
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="col-md-3">
-
-            <div class="card card-dashboard bg4 shadow">
-
-                <div class="card-body">
-
-                    <div class="d-flex justify-content-between">
-
-                        <div>
-
-                            <h6>
-                                Vacunas
-                            </h6>
-
-                            <h1 class="fw-bold">
-
-                                <?= $vacunas ?>
-
-                            </h1>
-
-                        </div>
-
-                        <div class="icon-box">
-                            💉
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
+    <div class="page-header-actions">
+      <a href="modules/empleados/empleados.php" class="btn btn-primary">Ver Empleados</a>
     </div>
+  </section>
 
-    <!-- ALERTAS -->
-
-    <div class="card alert-card shadow">
-
-        <div class="card-body">
-
-            <h4 class="mb-4">
-                🚨 Alertas Automáticas
-            </h4>
-
-            <div class="table-responsive">
-
-                <table class="table table-hover">
-
-                    <thead class="table-dark">
-
-                        <tr>
-
-                            <th>Empleado</th>
-                            <th>Curso</th>
-                            <th>Vencimiento</th>
-                            <th>Estado</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                    <?php
-
-                    $queryAlertas = "
-
-                    SELECT
-
-                    empleados.nombres,
-                    empleados.apellidos,
-
-                    cursos.nombre AS curso,
-
-                    empleado_cursos.fecha_vencimiento
-
-                    FROM empleado_cursos
-
-                    INNER JOIN empleados
-                    ON empleado_cursos.empleado_id = empleados.id
-
-                    INNER JOIN cursos
-                    ON empleado_cursos.curso_id = cursos.id
-
-                    ORDER BY empleado_cursos.fecha_vencimiento ASC
-
-                    LIMIT 20
-
-                    ";
-
-                    $resultadoAlertas = mysqli_query($conn,$queryAlertas);
-
-                    while($alerta = mysqli_fetch_assoc($resultadoAlertas)){
-
-                        $hoy = date('Y-m-d');
-
-                        $vencimiento = $alerta['fecha_vencimiento'];
-
-                        $dias = (strtotime($vencimiento)-strtotime($hoy))/86400;
-
-                        if($dias < 0){
-
-                            $estado = "VENCIDO";
-                            $badge = "danger";
-
-                        }elseif($dias <= 30){
-
-                            $estado = "POR VENCER";
-                            $badge = "warning";
-
-                        }else{
-
-                            $estado = "VIGENTE";
-                            $badge = "success";
-
-                        }
-
-                    ?>
-
-                    <tr>
-
-                        <td>
-
-                            <?= $alerta['nombres'] ?>
-                            <?= $alerta['apellidos'] ?>
-
-                        </td>
-
-                        <td>
-
-                            <?= $alerta['curso'] ?>
-
-                        </td>
-
-                        <td>
-
-                            <?= $alerta['fecha_vencimiento'] ?>
-
-                        </td>
-
-                        <td>
-
-                            <span class="badge bg-<?= $badge ?>">
-
-                                <?= $estado ?>
-
-                            </span>
-
-                        </td>
-
-                    </tr>
-
-                    <?php } ?>
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
+  <section class="profile-hero">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-4">
+      <div>
+        <h2>Visión general del cumplimiento</h2>
+        <p class="text-muted">Monitorea los indicadores clave y las alertas para mantener la operación segura y certificada.</p>
+      </div>
+      <div class="avatar-lg"></div>
     </div>
+  </section>
+
+  <section class="kpi-grid">
+
+          <div class="kpi-card blue">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="kpi-label">Empleados</div>
+            <div class="kpi-value"><?= $empleados ?></div>
+          </div>
+          <div class="kpi-icon">👷</div>
+        </div>
+      </div>
+
+      <div class="kpi-card red">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="kpi-label">Cursos Vencidos</div>
+            <div class="kpi-value"><?= $cursos_vencidos ?></div>
+          </div>
+          <div class="kpi-icon">🚨</div>
+        </div>
+      </div>
+
+      <div class="kpi-card amber">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="kpi-label">Por Vencer</div>
+            <div class="kpi-value"><?= $cursos_por_vencer ?></div>
+          </div>
+          <div class="kpi-icon">⚠️</div>
+        </div>
+      </div>
+
+      <div class="kpi-card green">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="kpi-label">Vacunas</div>
+            <div class="kpi-value"><?= $vacunas ?></div>
+          </div>
+          <div class="kpi-icon">💉</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel alerts-table-wrap">
+      <div class="panel-header">
+        <div class="panel-title">🚨 Alertas Automáticas</div>
+        <span class="badge badge-warning">Últimas 20 alertas</span>
+      </div>
+      <div class="panel-body">
+  <div class="table-wrapper">
+    <table class="vigia-table">
+      <thead>
+        <tr>
+          <th>Empleado</th>
+          <th>Curso</th>
+          <th>Vencimiento</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+
+      <?php
+
+      $queryAlertas = "
+      SELECT
+      empleados.nombres,
+      empleados.apellidos,
+      cursos.nombre AS curso,
+      empleado_cursos.fecha_vencimiento
+      FROM empleado_cursos
+      INNER JOIN empleados ON empleado_cursos.empleado_id = empleados.id
+      INNER JOIN cursos ON empleado_cursos.curso_id = cursos.id
+      ORDER BY empleado_cursos.fecha_vencimiento ASC
+      LIMIT 20
+      ";
+
+      $resultadoAlertas = mysqli_query($conn, $queryAlertas);
+
+      while($alerta = mysqli_fetch_assoc($resultadoAlertas)){
+
+          $hoy = date('Y-m-d');
+          $vencimiento = $alerta['fecha_vencimiento'];
+          $dias = (strtotime($vencimiento) - strtotime($hoy)) / 86400;
+
+          if($dias < 0){
+              $estado = "VENCIDO";
+              $badge = "badge-danger";
+          } elseif($dias <= 30){
+              $estado = "POR VENCER";
+              $badge = "badge-warning";
+          } else {
+              $estado = "VIGENTE";
+              $badge = "badge-success";
+          }
+
+      ?>
+
+        <tr>
+          <td><?= $alerta['nombres'] ?> <?= $alerta['apellidos'] ?></td>
+          <td><?= $alerta['curso'] ?></td>
+          <td><?= $alerta['fecha_vencimiento'] ?></td>
+          <td><span class="badge <?= $badge ?>"><?= $estado ?></span></td>
+        </tr>
+
+      <?php } ?>
+
+      </tbody>
+    </table>
+  </div>
+</div>
+</section>
 
 </div>
 

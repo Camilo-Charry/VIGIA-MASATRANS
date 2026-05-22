@@ -217,23 +217,37 @@ if(isset($_POST['guardar'])){
 <!-- SIDEBAR -->
 
 <div class="sidebar">
-
-    <div class="logo">
+  <div class="sidebar-logo">
+    <div class="brand">
+      <div class="brand-logo"></div>
+      <span>
         VIGIA MASATRANS
+        <div class="brand-sub">Panel Corporativo</div>
+      </span>
     </div>
+  </div>
 
+  <nav class="sidebar-nav">
     <a href="../../dashboard.php">
-        📊 Dashboard
+      <span class="nav-icon">📊</span>
+      Dashboard
     </a>
-
-    <a href="empleados.php">
-        👷 Empleados
+    <a href="empleados.php" class="active">
+      <span class="nav-icon">👷</span>
+      Empleados
     </a>
-
     <a href="../../logout.php">
-        🚪 Cerrar sesión
+      <span class="nav-icon">🚪</span>
+      Cerrar sesión
     </a>
+  </nav>
 
+  <div class="sidebar-footer">
+    <a href="../../dashboard.php">
+      <span class="nav-icon">ℹ️</span>
+      Control HSEQ
+    </a>
+  </div>
 </div>
 
 <!-- MAIN -->

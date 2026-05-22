@@ -97,24 +97,39 @@ href="../../assets/css/style.css">
 <!-- SIDEBAR -->
 
 <div class="sidebar">
-
-    <div class="logo">
-        VIGIA MASATRANS
-    </div>
-
-    <a href="../../dashboard.php">
-        📊 Dashboard
-    </a>
-
-    <a href="empleados.php">
-        👷 Empleados
-    </a>
-
-    <a href="../../logout.php">
-        🚪 Cerrar sesión
-    </a>
-
+  <div class="sidebar-logo">
+    <div class="brand">
+  <div class="brand-logo"></div>
+  <span>
+    VIGIA MASATRANS
+    <div class="brand-sub">Panel Corporativo</div>
+  </span>
 </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="../../dashboard.php">
+      <span class="nav-icon">📊</span>
+      Dashboard
+    </a>
+    <a href="empleados.php" class="active">
+      <span class="nav-icon">👷</span>
+      Empleados
+    </a>
+    <a href="../../logout.php">
+      <span class="nav-icon">🚪</span>
+      Cerrar sesión
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="../../dashboard.php">
+      <span class="nav-icon">ℹ️</span>
+      Control HSEQ
+    </a>
+  </div>
+</div>
+
 
 <!-- MAIN -->
 
