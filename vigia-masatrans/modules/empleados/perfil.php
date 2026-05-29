@@ -13,42 +13,42 @@ $id = $_GET['id'];
 
 $query = "SELECT * FROM empleados WHERE id='$id'";
 $resultado = mysqli_query($conn,$query);
-
 $empleado = mysqli_fetch_assoc($resultado);
 
-$queryLicencia = "
-SELECT * FROM licencias
-WHERE empleado_id='$id'
-LIMIT 1
-";
-
+$queryLicencia = "SELECT * FROM licencias WHERE empleado_id='$id' LIMIT 1";
 $resultLicencia = mysqli_query($conn,$queryLicencia);
-
 $licencia = mysqli_fetch_assoc($resultLicencia);
 
-?>
+$queryCursos = "
+SELECT empleado_cursos.*, cursos.nombre AS curso_nombre
+FROM empleado_cursos
+INNER JOIN cursos ON empleado_cursos.curso_id = cursos.id
+WHERE empleado_cursos.empleado_id = '$id'
+ORDER BY empleado_cursos.fecha_vencimiento ASC
+";
+$resultCursos = mysqli_query($conn,$queryCursos);
 
+$resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id'");
+
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Perfil Empleado | VIGIA MASATRANS</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
 
 <style>
-
 .profile-header{
     background:linear-gradient(135deg,#0f172a,#1e293b);
     border-radius:25px;
     padding:35px;
     color:white;
 }
-
 .profile-photo{
     width:120px;
     height:120px;
@@ -61,31 +61,11 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
     font-weight:bold;
     margin:auto;
 }
-
-.info-card{
-    border:none;
-    border-radius:20px;
-}
-
-.info-item{
-    background:#f8fafc;
-    border-radius:15px;
-    padding:20px;
-    height:100%;
-}
-
-.info-label{
-    color:#64748b;
-    font-size:14px;
-}
-
-.info-value{
-    font-weight:600;
-    font-size:16px;
-    color:#0f172a;
-}
-
-.tab-btn {
+.info-card{ border:none; border-radius:20px; }
+.info-item{ background:#f8fafc; border-radius:15px; padding:20px; height:100%; }
+.info-label{ color:#64748b; font-size:14px; }
+.info-value{ font-weight:600; font-size:16px; color:#0f172a; }
+.tab-btn{
     background:#e2e8f0;
     color:#334155;
     border:none;
@@ -96,17 +76,73 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
     font-size:14px;
     transition: all 0.2s;
 }
+.tab-btn.active{ background:#2563eb; color:white; }
+.tab-btn:hover{ opacity: 0.85; }
 
-.tab-btn.active {
-    background:#2563eb;
+/* MODAL PDF */
+#modalPDF {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.85);
+    z-index:9999;
+    align-items:center;
+    justify-content:center;
+}
+#modalPDF.open {
+    display:flex;
+}
+.modal-pdf-box {
+    background:white;
+    width:85%;
+    height:90vh;
+    border-radius:16px;
+    overflow:hidden;
+    position:relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-pdf-header {
+    background:#0a1628;
     color:white;
+    padding:14px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:600;
 }
-
-.tab-btn:hover {
-    opacity: 0.85;
+.modal-pdf-close {
+    background:#ef4444;
+    color:white;
+    border:none;
+    border-radius:8px;
+    padding:6px 14px;
+    cursor:pointer;
+    font-weight:600;
 }
-
 </style>
+
+<script>
+function showTab(tab) {
+    var tabs = ['general','laboral','licencia','seguridad','cursos','vacunas'];
+    for(var i = 0; i < tabs.length; i++){
+        document.getElementById('tab-' + tabs[i]).style.display = 'none';
+        document.getElementById('btn-' + tabs[i]).classList.remove('active');
+    }
+    document.getElementById('tab-' + tab).style.display = 'block';
+    document.getElementById('btn-' + tab).classList.add('active');
+}
+
+function verPDF(archivo) {
+    document.getElementById('iframePDF').src = '../../uploads/cursos/' + archivo;
+    document.getElementById('modalPDF').classList.add('open');
+}
+
+function cerrarPDF() {
+    document.getElementById('modalPDF').classList.remove('open');
+    document.getElementById('iframePDF').src = '';
+}
+</script>
 
 </head>
 <body>
@@ -122,7 +158,6 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
       </span>
     </div>
   </div>
-
   <nav class="sidebar-nav">
     <a href="../../dashboard.php">
       <span class="nav-icon">📊</span>
@@ -137,13 +172,23 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
       Cerrar sesión
     </a>
   </nav>
-
   <div class="sidebar-footer">
     <a href="../../dashboard.php">
       <span class="nav-icon">ℹ️</span>
       Control HSEQ
     </a>
   </div>
+</div>
+
+<!-- MODAL PDF -->
+<div id="modalPDF">
+    <div class="modal-pdf-box">
+        <div class="modal-pdf-header">
+            <span>📄 Certificado del curso</span>
+            <button class="modal-pdf-close" onclick="cerrarPDF()">✕ Cerrar</button>
+        </div>
+        <iframe id="iframePDF" src="" width="100%" height="100%" style="border:none;"></iframe>
+    </div>
 </div>
 
 <!-- MAIN -->
@@ -320,21 +365,21 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Categoría</div>
-                            <div class="info-value"><?= $licencia['categoria'] ?></div>
+                            <div class="info-value"><?= $licencia['categoria'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Vencimiento</div>
-                            <div class="info-value"><?= $licencia['fecha_vencimiento'] ?></div>
+                            <div class="info-value"><?= $licencia['fecha_vencimiento'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
 
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Restricciones</div>
-                            <div class="info-value"><?= $licencia['restricciones'] ?></div>
+                            <div class="info-value"><?= $licencia['restricciones'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
 
@@ -405,22 +450,10 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
 
     <!-- CURSOS -->
     <div id="tab-cursos" style="display:none;">
-
-        <?php
-        $queryCursos = "
-        SELECT empleado_cursos.*, cursos.nombre AS curso_nombre
-        FROM empleado_cursos
-        INNER JOIN cursos ON empleado_cursos.curso_id = cursos.id
-        WHERE empleado_cursos.empleado_id = '$id'
-        ORDER BY empleado_cursos.fecha_vencimiento ASC
-        ";
-        $resultCursos = mysqli_query($conn,$queryCursos);
-        ?>
-
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5>Cursos y vencimientos</h5>
+                    <h5>📚 Cursos y vencimientos</h5>
                     <a href="agregar_curso.php?id=<?= $id ?>" class="btn btn-primary">+ Agregar Curso</a>
                 </div>
                 <div class="table-responsive">
@@ -431,22 +464,31 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
                                 <th>Realización</th>
                                 <th>Vencimiento</th>
                                 <th>Estado</th>
+                                <th>Soporte</th>
                             </tr>
                         </thead>
                         <tbody>
                         <?php while($curso = mysqli_fetch_assoc($resultCursos)){
                             $hoy = date('Y-m-d');
-                            $vencimiento = $curso['fecha_vencimiento'];
-                            $dias = (strtotime($vencimiento) - strtotime($hoy)) / 86400;
+                            $dias = (strtotime($curso['fecha_vencimiento']) - strtotime($hoy)) / 86400;
                             if($dias < 0){ $estado = "VENCIDO"; $badge = "danger"; }
                             elseif($dias <= 30){ $estado = "POR VENCER"; $badge = "warning"; }
                             else { $estado = "VIGENTE"; $badge = "success"; }
                         ?>
                             <tr>
-                                <td><?= $curso['curso_nombre'] ?></td>
+                                <td><strong><?= $curso['curso_nombre'] ?></strong></td>
                                 <td><?= $curso['fecha_realizacion'] ?></td>
                                 <td><?= $curso['fecha_vencimiento'] ?></td>
                                 <td><span class="badge bg-<?= $badge ?>"><?= $estado ?></span></td>
+                                <td>
+                                    <?php if($curso['pdf_soporte']){ ?>
+                                        <button onclick="verPDF('<?= $curso['pdf_soporte'] ?>')" class="btn btn-sm btn-primary">
+                                            📄 Ver PDF
+                                        </button>
+                                    <?php } else { ?>
+                                        <span class="text-muted">Sin soporte</span>
+                                    <?php } ?>
+                                </td>
                             </tr>
                         <?php } ?>
                         </tbody>
@@ -454,66 +496,49 @@ $licencia = mysqli_fetch_assoc($resultLicencia);
                 </div>
             </div>
         </div>
-
     </div>
 
     <!-- VACUNAS -->
     <div id="tab-vacunas" style="display:none;">
-
-        <?php
-        $queryVacunas = mysqli_query($conn,"
-        SELECT * FROM vacunas
-        WHERE empleado_id='$id'
-        ORDER BY fecha_aplicacion DESC
-        ");
-        ?>
-
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5>Vacunas registradas</h5>
+                    <h5>💉 Vacunas registradas</h5>
                     <a href="agregar_vacuna.php?id=<?= $id ?>" class="btn btn-primary">+ Agregar Vacuna</a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-dark">
                             <tr>
-                                <th>Vacuna</th>
-                                <th>Dosis</th>
-                                <th>Fecha</th>
+                                <th>Fiebre Amarilla</th>
+                                <th>Esquema Dosis 1</th>
+                                <th>Esquema Dosis 2</th>
+                                <th>Esquema Dosis 3</th>
+                                <th>COVID Dosis 1</th>
+                                <th>COVID Dosis 2</th>
                                 <th>Observaciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                        <?php while($vacuna = mysqli_fetch_assoc($queryVacunas)){ ?>
+                        <?php if($resultVacunas){ while($vacuna = mysqli_fetch_assoc($resultVacunas)){ ?>
                             <tr>
-                                <td><?= $vacuna['tipo_vacuna'] ?></td>
-                                <td><?= $vacuna['dosis'] ?></td>
-                                <td><?= $vacuna['fecha_aplicacion'] ?></td>
+                                <td><?= $vacuna['fv_fiebre_amarilla'] ?></td>
+                                <td><?= $vacuna['esquema_dosis_1'] ?></td>
+                                <td><?= $vacuna['esquema_dosis_2'] ?></td>
+                                <td><?= $vacuna['esquema_dosis_3'] ?></td>
+                                <td><?= $vacuna['covid_dosis_1'] ?></td>
+                                <td><?= $vacuna['covid_dosis_2'] ?></td>
                                 <td><?= $vacuna['observaciones'] ?></td>
                             </tr>
-                        <?php } ?>
+                        <?php } } ?>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-
     </div>
 
 </div>
-
-<script>
-function showTab(tab) {
-    const tabs = ['general','laboral','licencia','seguridad','cursos','vacunas'];
-    tabs.forEach(function(t) {
-        document.getElementById('tab-' + t).style.display = 'none';
-        document.getElementById('btn-' + t).classList.remove('active');
-    });
-    document.getElementById('tab-' + tab).style.display = 'block';
-    document.getElementById('btn-' + tab).classList.add('active');
-}
-</script>
 
 </body>
 </html>
