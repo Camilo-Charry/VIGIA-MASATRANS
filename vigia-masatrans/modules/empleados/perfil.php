@@ -39,6 +39,9 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perfil Empleado | VIGIA MASATRANS</title>
 
+<!-- AQUÍ LO PLASMAS -->
+<link rel="icon" href="../../assets/img/logo.png" type="image/png">
+
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
 
@@ -60,6 +63,23 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
     font-size:40px;
     font-weight:bold;
     margin:auto;
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+}
+.profile-photo:hover .foto-overlay{
+    opacity:1;
+}
+.foto-overlay{
+    position:absolute;
+    bottom:0; left:0; right:0;
+    background:rgba(0,0,0,0.55);
+    color:white;
+    font-size:10px;
+    text-align:center;
+    padding:5px;
+    opacity:0;
+    transition: opacity 0.2s;
 }
 .info-card{ border:none; border-radius:20px; }
 .info-item{ background:#f8fafc; border-radius:15px; padding:20px; height:100%; }
@@ -79,7 +99,6 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
 .tab-btn.active{ background:#2563eb; color:white; }
 .tab-btn:hover{ opacity: 0.85; }
 
-/* MODAL PDF */
 #modalPDF {
     display:none;
     position:fixed;
@@ -90,9 +109,7 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
     align-items:center;
     justify-content:center;
 }
-#modalPDF.open {
-    display:flex;
-}
+#modalPDF.open { display:flex; }
 .modal-pdf-box {
     background:white;
     width:85%;
@@ -198,9 +215,24 @@ function cerrarPDF() {
     <div class="profile-header shadow mb-4">
         <div class="row align-items-center">
             <div class="col-md-2 text-center">
-                <div class="profile-photo">
-                    <?= strtoupper(substr($empleado['nombres'],0,1)) ?>
+
+                <!-- FOTO DE PERFIL -->
+                <div class="profile-photo" onclick="document.getElementById('inputFoto').click()">
+                    <?php if($empleado['foto']){ ?>
+                        <img src="../../uploads/fotos/<?= $empleado['foto'] ?>"
+                             style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                    <?php } else { ?>
+                        <?= strtoupper(substr($empleado['nombres'],0,1)) ?>
+                    <?php } ?>
+                    <div class="foto-overlay">📷 Cambiar</div>
                 </div>
+
+                <form method="POST" action="subir_foto.php" enctype="multipart/form-data" id="formFoto">
+                    <input type="hidden" name="empleado_id" value="<?= $id ?>">
+                    <input type="file" id="inputFoto" name="foto" accept="image/*" style="display:none"
+                           onchange="document.getElementById('formFoto').submit()">
+                </form>
+
             </div>
             <div class="col-md-10">
                 <h2 class="fw-bold">
@@ -210,10 +242,39 @@ function cerrarPDF() {
                 <p class="mb-1"><?= $empleado['cargo'] ?></p>
                 <small>Cédula: <?= $empleado['cedula'] ?></small>
                 <div class="mt-3">
+
                     <?php if($empleado['rol_conductor'] == 'SI'){ ?>
                         <span class="badge bg-warning text-dark">Conductor</span>
                     <?php } ?>
-                    <span class="badge bg-success">ACTIVO</span>
+
+                    <?php if($empleado['estado'] == 'ACTIVO'){ ?>
+                        <span class="badge bg-success">ACTIVO</span>
+                        <a href="cambiar_estado.php?id=<?= $id ?>&estado=INACTIVO"
+                        class="btn btn-sm btn-warning ms-2"
+                        onclick="return confirm('¿Desactivar este empleado?')">
+                            ⏸ Desactivar
+                        </a>
+                        <a href="cambiar_estado.php?id=<?= $id ?>&estado=RETIRADO"
+                        class="btn btn-sm btn-danger ms-2"
+                        onclick="return confirm('¿Marcar como retirado?')">
+                            🚪 Retirar
+                        </a>
+                    <?php } elseif($empleado['estado'] == 'INACTIVO'){ ?>
+                        <span class="badge bg-secondary">INACTIVO</span>
+                        <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
+                        class="btn btn-sm btn-success ms-2"
+                        onclick="return confirm('¿Activar este empleado?')">
+                            ▶ Activar
+                        </a>
+                    <?php } elseif($empleado['estado'] == 'RETIRADO'){ ?>
+                        <span class="badge bg-danger">RETIRADO</span>
+                        <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
+                        class="btn btn-sm btn-success ms-2"
+                        onclick="return confirm('¿Reactivar este empleado?')">
+                            ▶ Reactivar
+                        </a>
+                    <?php } ?>
+
                 </div>
             </div>
         </div>
@@ -465,6 +526,7 @@ function cerrarPDF() {
                                 <th>Vencimiento</th>
                                 <th>Estado</th>
                                 <th>Soporte</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -488,6 +550,19 @@ function cerrarPDF() {
                                     <?php } else { ?>
                                         <span class="text-muted">Sin soporte</span>
                                     <?php } ?>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="renovar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
+                                        class="btn btn-sm btn-warning">
+                                            🔄 Renovar
+                                        </a>
+                                        <a href="eliminar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="return confirm('¿Eliminar este curso?')">
+                                            🗑️ Eliminar
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         <?php } ?>

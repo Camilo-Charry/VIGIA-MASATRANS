@@ -46,7 +46,7 @@ SELECT id FROM vacunas
 content="width=device-width, initial-scale=1.0">
 
 <title>Dashboard | VIGIA MASATRANS</title>
-
+<link rel="icon" href="assets/img/logo.png" type="image/png">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
