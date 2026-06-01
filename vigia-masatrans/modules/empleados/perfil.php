@@ -30,6 +30,8 @@ $resultCursos = mysqli_query($conn,$queryCursos);
 
 $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id'");
 
+$resultDocumentos = mysqli_query($conn,"SELECT * FROM documentos_empleado WHERE empleado_id='$id' ORDER BY fecha_subida DESC");
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -39,9 +41,7 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Perfil Empleado | VIGIA MASATRANS</title>
 
-<!-- AQUÍ LO PLASMAS -->
 <link rel="icon" href="../../assets/img/logo.png" type="image/png">
-
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="../../assets/css/style.css">
 
@@ -67,9 +67,7 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
     position:relative;
     overflow:hidden;
 }
-.profile-photo:hover .foto-overlay{
-    opacity:1;
-}
+.profile-photo:hover .foto-overlay{ opacity:1; }
 .foto-overlay{
     position:absolute;
     bottom:0; left:0; right:0;
@@ -141,7 +139,7 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
 
 <script>
 function showTab(tab) {
-    var tabs = ['general','laboral','licencia','seguridad','cursos','vacunas'];
+    var tabs = ['general','laboral','licencia','seguridad','cursos','vacunas','documentos'];
     for(var i = 0; i < tabs.length; i++){
         document.getElementById('tab-' + tabs[i]).style.display = 'none';
         document.getElementById('btn-' + tabs[i]).classList.remove('active');
@@ -150,8 +148,9 @@ function showTab(tab) {
     document.getElementById('btn-' + tab).classList.add('active');
 }
 
-function verPDF(archivo) {
-    document.getElementById('iframePDF').src = '../../uploads/cursos/' + archivo;
+function verPDF(archivo, carpeta) {
+    var ruta = carpeta ? '../../uploads/' + carpeta + '/' + archivo : '../../uploads/cursos/' + archivo;
+    document.getElementById('iframePDF').src = ruta;
     document.getElementById('modalPDF').classList.add('open');
 }
 
@@ -201,7 +200,7 @@ function cerrarPDF() {
 <div id="modalPDF">
     <div class="modal-pdf-box">
         <div class="modal-pdf-header">
-            <span>📄 Certificado del curso</span>
+            <span>📄 Documento</span>
             <button class="modal-pdf-close" onclick="cerrarPDF()">✕ Cerrar</button>
         </div>
         <iframe id="iframePDF" src="" width="100%" height="100%" style="border:none;"></iframe>
@@ -216,7 +215,6 @@ function cerrarPDF() {
         <div class="row align-items-center">
             <div class="col-md-2 text-center">
 
-                <!-- FOTO DE PERFIL -->
                 <div class="profile-photo" onclick="document.getElementById('inputFoto').click()">
                     <?php if($empleado['foto']){ ?>
                         <img src="../../uploads/fotos/<?= $empleado['foto'] ?>"
@@ -288,6 +286,7 @@ function cerrarPDF() {
         <button class="tab-btn" id="btn-seguridad" onclick="showTab('seguridad')">🏥 Seguridad Social</button>
         <button class="tab-btn" id="btn-cursos" onclick="showTab('cursos')">📚 Cursos</button>
         <button class="tab-btn" id="btn-vacunas" onclick="showTab('vacunas')">💉 Vacunas</button>
+        <button class="tab-btn" id="btn-documentos" onclick="showTab('documentos')">📁 Documentos</button>
     </div>
 
     <!-- GENERAL -->
@@ -544,7 +543,7 @@ function cerrarPDF() {
                                 <td><span class="badge bg-<?= $badge ?>"><?= $estado ?></span></td>
                                 <td>
                                     <?php if($curso['pdf_soporte']){ ?>
-                                        <button onclick="verPDF('<?= $curso['pdf_soporte'] ?>')" class="btn btn-sm btn-primary">
+                                        <button onclick="verPDF('<?= $curso['pdf_soporte'] ?>','cursos')" class="btn btn-sm btn-primary">
                                             📄 Ver PDF
                                         </button>
                                     <?php } else { ?>
@@ -554,14 +553,10 @@ function cerrarPDF() {
                                 <td>
                                     <div class="d-flex gap-2">
                                         <a href="renovar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
-                                        class="btn btn-sm btn-warning">
-                                            🔄 Renovar
-                                        </a>
+                                        class="btn btn-sm btn-warning">🔄 Renovar</a>
                                         <a href="eliminar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
                                         class="btn btn-sm btn-danger"
-                                        onclick="return confirm('¿Eliminar este curso?')">
-                                            🗑️ Eliminar
-                                        </a>
+                                        onclick="return confirm('¿Eliminar este curso?')">🗑️ Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -604,6 +599,61 @@ function cerrarPDF() {
                                 <td><?= $vacuna['covid_dosis_1'] ?></td>
                                 <td><?= $vacuna['covid_dosis_2'] ?></td>
                                 <td><?= $vacuna['observaciones'] ?></td>
+                            </tr>
+                        <?php } } ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOCUMENTOS -->
+    <div id="tab-documentos" style="display:none;">
+        <div class="card info-card shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>📁 Documentos del empleado</h5>
+                    <a href="subir_documento.php?id=<?= $id ?>" class="btn btn-primary">+ Subir Documento</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Fecha subida</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php if($resultDocumentos){ while($doc = mysqli_fetch_assoc($resultDocumentos)){ ?>
+                            <tr>
+                                <td><span class="badge bg-primary"><?= $doc['tipo_documento'] ?></span></td>
+                                <td><?= $doc['descripcion'] ? $doc['descripcion'] : '<span class="text-muted">Sin descripción</span>' ?></td>
+                                <td><?= date('d/m/Y H:i', strtotime($doc['fecha_subida'])) ?></td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <?php
+                                        $ext = strtolower(pathinfo($doc['nombre_archivo'], PATHINFO_EXTENSION));
+                                        if(in_array($ext, ['pdf','jpg','jpeg','png'])){
+                                        ?>
+                                            <button onclick="verPDF('<?= $doc['nombre_archivo'] ?>','documentos')"
+                                            class="btn btn-sm btn-primary">
+                                                👁️ Ver
+                                            </button>
+                                        <?php } ?>
+                                        <a href="../../uploads/documentos/<?= $doc['nombre_archivo'] ?>"
+                                        download class="btn btn-sm btn-success">
+                                            ⬇️ Descargar
+                                        </a>
+                                        <a href="eliminar_documento.php?doc_id=<?= $doc['id'] ?>&empleado_id=<?= $id ?>"
+                                        class="btn btn-sm btn-danger"
+                                        onclick="return confirm('¿Eliminar este documento?')">
+                                            🗑️ Eliminar
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
                         <?php } } ?>
                         </tbody>

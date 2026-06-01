@@ -40,15 +40,12 @@ $resultado = mysqli_query($conn, $query);
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Perfil Empleado | VIGIA MASATRANS</title>
+<title>Empleados | VIGIA MASATRANS</title>
 
-<!-- AQUÍ LO PLASMAS -->
 <link rel="icon" href="../../assets/img/logo.png" type="image/png">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link rel="stylesheet"
-href="../../assets/css/style.css">
+<link rel="stylesheet" href="../../assets/css/style.css">
 
 <style>
 
@@ -68,6 +65,14 @@ href="../../assets/css/style.css">
     justify-content:center;
     font-weight:bold;
     font-size:20px;
+    overflow:hidden;
+    flex-shrink:0;
+}
+
+.avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
 
 .search-box{
@@ -95,16 +100,15 @@ href="../../assets/css/style.css">
 <body>
 
 <!-- SIDEBAR -->
-
 <div class="sidebar">
   <div class="sidebar-logo">
     <div class="brand">
-  <div class="brand-logo"></div>
-  <span>
-    VIGIA MASATRANS
-    <div class="brand-sub">Panel Corporativo</div>
-  </span>
-</div>
+      <div class="brand-logo"></div>
+      <span>
+        VIGIA MASATRANS
+        <div class="brand-sub">Panel Corporativo</div>
+      </span>
+    </div>
   </div>
 
   <nav class="sidebar-nav">
@@ -130,104 +134,47 @@ href="../../assets/css/style.css">
   </div>
 </div>
 
-
 <!-- MAIN -->
-
 <div class="main-content">
-
-    <!-- HEADER -->
 
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-
-            <h2 class="fw-bold">
-                Gestión de Empleados
-            </h2>
-
-            <small class="text-muted">
-                Administración general del personal
-            </small>
-
+            <h2 class="fw-bold">Gestión de Empleados</h2>
+            <small class="text-muted">Administración general del personal</small>
         </div>
 
         <div class="top-actions">
-
-            <a href="crear.php"
-            class="btn btn-primary">
-
-                + Nuevo Empleado
-
-            </a>
-
-            <a href="exportar_excel.php"
-            class="btn btn-success">
-
-                📤 Exportar Excel
-
-            </a>
-
-            <a href="exportar_pdf.php"
-            class="btn btn-danger">
-
-                📄 Exportar PDF
-
-            </a>
-
+            <a href="crear.php" class="btn btn-primary">+ Nuevo Empleado</a>
+            <a href="exportar_excel.php" class="btn btn-success">📤 Exportar Excel</a>
+            <a href="exportar_pdf.php" class="btn btn-danger">📄 Exportar PDF</a>
         </div>
 
     </div>
 
     <!-- BUSCADOR -->
-
     <div class="search-box shadow mb-4">
-
         <form method="GET">
-
             <div class="row">
-
                 <div class="col-md-10">
-
-                    <input
-                    type="text"
-                    name="buscar"
-                    class="form-control"
+                    <input type="text" name="buscar" class="form-control"
                     placeholder="Buscar por nombre, cédula o cargo..."
                     value="<?= $busqueda ?>">
-
                 </div>
-
                 <div class="col-md-2">
-
-                    <button
-                    class="btn btn-primary w-100">
-
-                        Buscar
-
-                    </button>
-
+                    <button class="btn btn-primary w-100">Buscar</button>
                 </div>
-
             </div>
-
         </form>
-
     </div>
 
     <!-- TABLA -->
-
     <div class="card employee-card shadow">
-
         <div class="card-body">
-
             <div class="table-responsive">
-
                 <table class="table table-hover align-middle">
-
                     <thead class="table-dark">
-
                         <tr>
-
                             <th>Empleado</th>
                             <th>Cargo</th>
                             <th>Cédula</th>
@@ -235,112 +182,63 @@ href="../../assets/css/style.css">
                             <th>Correo</th>
                             <th>Estado</th>
                             <th>Acciones</th>
-
                         </tr>
-
                     </thead>
-
                     <tbody>
 
                     <?php while($empleado = mysqli_fetch_assoc($resultado)){ ?>
 
                         <tr>
-
                             <td>
-
                                 <div class="d-flex align-items-center gap-3">
 
                                     <div class="avatar">
-
-                                        <?= strtoupper(substr($empleado['nombres'],0,1)) ?>
-
+                                        <?php if($empleado['foto']){ ?>
+                                            <img src="../../uploads/fotos/<?= $empleado['foto'] ?>" alt="">
+                                        <?php } else { ?>
+                                            <?= strtoupper(substr($empleado['nombres'],0,1)) ?>
+                                        <?php } ?>
                                     </div>
 
                                     <div>
-
                                         <strong>
-
                                             <?= $empleado['nombres'] ?>
                                             <?= $empleado['apellidos'] ?>
-
                                         </strong>
-
                                         <br>
-
-                                        <small class="text-muted">
-
-                                            <?= $empleado['correo'] ?>
-
-                                        </small>
-
+                                        <small class="text-muted"><?= $empleado['correo'] ?></small>
                                     </div>
 
                                 </div>
+                            </td>
 
+                            <td><?= $empleado['cargo'] ?></td>
+                            <td><?= $empleado['cedula'] ?></td>
+                            <td><?= $empleado['celular'] ?></td>
+                            <td><?= $empleado['correo'] ?></td>
+
+                            <td>
+                                <?php if($empleado['estado'] == 'ACTIVO'){ ?>
+                                    <span class="badge bg-success">ACTIVO</span>
+                                <?php } elseif($empleado['estado'] == 'INACTIVO'){ ?>
+                                    <span class="badge bg-secondary">INACTIVO</span>
+                                <?php } elseif($empleado['estado'] == 'RETIRADO'){ ?>
+                                    <span class="badge bg-danger">RETIRADO</span>
+                                <?php } ?>
                             </td>
 
                             <td>
-
-                                <?= $empleado['cargo'] ?>
-
-                            </td>
-
-                            <td>
-
-                                <?= $empleado['cedula'] ?>
-
-                            </td>
-
-                            <td>
-
-                                <?= $empleado['celular'] ?>
-
-                            </td>
-
-                            <td>
-
-                                <?= $empleado['correo'] ?>
-
-                            </td>
-
-                            <td>
-
-                                <span class="badge bg-success">
-
-                                    ACTIVO
-
-                                </span>
-
-                            </td>
-
-                            <td>
-
                                 <div class="d-flex gap-2">
-
                                     <a href="perfil.php?id=<?= $empleado['id'] ?>"
-                                    class="btn btn-sm btn-primary">
-
-                                        Perfil
-
-                                    </a>
+                                    class="btn btn-sm btn-primary">Perfil</a>
 
                                     <a href="editar.php?id=<?= $empleado['id'] ?>"
-                                    class="btn btn-sm btn-warning">
-
-                                        Editar
-
-                                    </a>
+                                    class="btn btn-sm btn-warning">Editar</a>
 
                                     <a href="eliminar.php?id=<?= $empleado['id'] ?>"
                                     class="btn btn-sm btn-danger"
-                                    onclick="return confirm('¿Eliminar empleado?')">
-
-                                        Eliminar
-
-                                    </a>
-
+                                    onclick="return confirm('¿Eliminar empleado?')">Eliminar</a>
                                 </div>
-
                             </td>
 
                         </tr>
@@ -348,13 +246,9 @@ href="../../assets/css/style.css">
                     <?php } ?>
 
                     </tbody>
-
                 </table>
-
             </div>
-
         </div>
-
     </div>
 
 </div>
