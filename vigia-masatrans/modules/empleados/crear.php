@@ -22,6 +22,7 @@ if(isset($_POST['guardar'])){
     $nivel_academico = $_POST['nivel_academico'];
 
     $cargo = $_POST['cargo'];
+    $area = $_POST['area'];
     $rol_conductor = $_POST['rol_conductor'];
     $fecha_ingreso = $_POST['fecha_ingreso'];
     $contrato = $_POST['contrato'];
@@ -62,7 +63,7 @@ if(isset($_POST['guardar'])){
         nombres,
         apellidos,
         cedula,
-        lugar_expedicion,
+        lugar_expedicion_cc,
         fecha_exp_cedula,
         rh,
         fecha_nacimiento,
@@ -70,6 +71,7 @@ if(isset($_POST['guardar'])){
         nivel_academico,
 
         cargo,
+        area,
         rol_conductor,
         fecha_ingreso,
         contrato,
@@ -80,8 +82,8 @@ if(isset($_POST['guardar'])){
         verificacion_antecedentes,
 
         direccion,
-        ciudad,
-        departamento,
+        ciudad_residencia,
+        departamento_residencia,
         tipo_vivienda,
         estrato,
         composicion_familiar,
@@ -114,6 +116,7 @@ if(isset($_POST['guardar'])){
         '$nivel_academico',
 
         '$cargo',
+        '$area',
         '$rol_conductor',
         '$fecha_ingreso',
         '$contrato',
@@ -152,19 +155,15 @@ if(isset($_POST['guardar'])){
         $empleado_id = mysqli_insert_id($conn);
 
         $queryLicencia = "INSERT INTO licencias(
-
             empleado_id,
             categoria,
             fecha_vencimiento,
             restricciones
-
         ) VALUES (
-
             '$empleado_id',
             '$categoria_licencia',
             '$fecha_vencimiento_licencia',
             '$restricciones_licencia'
-
         )";
 
         mysqli_query($conn,$queryLicencia);
@@ -173,7 +172,7 @@ if(isset($_POST['guardar'])){
 
     }else{
 
-        echo "Error al guardar empleado";
+        echo "Error: " . mysqli_error($conn);
 
     }
 
@@ -187,35 +186,29 @@ if(isset($_POST['guardar'])){
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Nuevo Empleado | VIGIA MASATRANS</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
 <link rel="stylesheet" href="../../assets/css/style.css">
 
 <style>
-
 .form-section{
     background:white;
     border-radius:20px;
     padding:25px;
     margin-bottom:25px;
 }
-
 .section-title{
     font-weight:bold;
     margin-bottom:20px;
     color:#0f172a;
 }
-
 </style>
 
 </head>
 <body>
 
 <!-- SIDEBAR -->
-
 <div class="sidebar">
   <div class="sidebar-logo">
     <div class="brand">
@@ -226,7 +219,6 @@ if(isset($_POST['guardar'])){
       </span>
     </div>
   </div>
-
   <nav class="sidebar-nav">
     <a href="../../dashboard.php">
       <span class="nav-icon">📊</span>
@@ -241,7 +233,6 @@ if(isset($_POST['guardar'])){
       Cerrar sesión
     </a>
   </nav>
-
   <div class="sidebar-footer">
     <a href="../../dashboard.php">
       <span class="nav-icon">ℹ️</span>
@@ -251,31 +242,18 @@ if(isset($_POST['guardar'])){
 </div>
 
 <!-- MAIN -->
-
 <div class="main-content">
 
     <div class="topbar mb-4">
-
-        <h3>
-            Nuevo Empleado
-        </h3>
-
-        <small class="text-muted">
-            Registro integral del trabajador
-        </small>
-
+        <h3>Nuevo Empleado</h3>
+        <small class="text-muted">Registro integral del trabajador</small>
     </div>
 
     <form method="POST">
 
         <!-- INFORMACION PERSONAL -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                👤 Información Personal
-            </div>
-
+            <div class="section-title">👤 Información Personal</div>
             <div class="row">
 
                 <div class="col-md-4 mb-3">
@@ -305,9 +283,7 @@ if(isset($_POST['guardar'])){
 
                 <div class="col-md-4 mb-3">
                     <label>RH</label>
-
                     <select name="rh" class="form-control">
-
                         <option>O+</option>
                         <option>O-</option>
                         <option>A+</option>
@@ -316,9 +292,7 @@ if(isset($_POST['guardar'])){
                         <option>B-</option>
                         <option>AB+</option>
                         <option>AB-</option>
-
                     </select>
-
                 </div>
 
                 <div class="col-md-4 mb-3">
@@ -328,15 +302,11 @@ if(isset($_POST['guardar'])){
 
                 <div class="col-md-4 mb-3">
                     <label>Género</label>
-
                     <select name="genero" class="form-control">
-
                         <option>Masculino</option>
                         <option>Femenino</option>
                         <option>Otro</option>
-
                     </select>
-
                 </div>
 
                 <div class="col-md-4 mb-3">
@@ -345,17 +315,11 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
         <!-- INFORMACION LABORAL -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                🚛 Información Laboral
-            </div>
-
+            <div class="section-title">🚛 Información Laboral</div>
             <div class="row">
 
                 <div class="col-md-4 mb-3">
@@ -364,15 +328,20 @@ if(isset($_POST['guardar'])){
                 </div>
 
                 <div class="col-md-4 mb-3">
+                    <label>Área <span style="color:red">*</span></label>
+                    <select name="area" class="form-control" required>
+                        <option value="">Seleccionar área...</option>
+                        <option value="OPERATIVO">OPERATIVO</option>
+                        <option value="ADMINISTRATIVO">ADMINISTRATIVO</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
                     <label>Rol conductor</label>
-
                     <select name="rol_conductor" class="form-control">
-
                         <option value="NO">NO</option>
                         <option value="SI">SI</option>
-
                     </select>
-
                 </div>
 
                 <div class="col-md-4 mb-3">
@@ -402,40 +371,26 @@ if(isset($_POST['guardar'])){
 
                 <div class="col-md-4 mb-3">
                     <label>SIPLAFT</label>
-
                     <select name="siplaft" class="form-control">
-
                         <option value="NO">NO</option>
                         <option value="SI">SI</option>
-
                     </select>
-
                 </div>
 
                 <div class="col-md-4 mb-3">
                     <label>Verificación antecedentes</label>
-
                     <select name="verificacion_antecedentes" class="form-control">
-
                         <option value="NO">NO</option>
                         <option value="SI">SI</option>
-
                     </select>
-
                 </div>
 
             </div>
-
         </div>
 
         <!-- LICENCIA -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                🚘 Licencia
-            </div>
-
+            <div class="section-title">🚘 Licencia</div>
             <div class="row">
 
                 <div class="col-md-4 mb-3">
@@ -454,17 +409,11 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
         <!-- RESIDENCIA -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                📍 Residencia
-            </div>
-
+            <div class="section-title">📍 Residencia</div>
             <div class="row">
 
                 <div class="col-md-6 mb-3">
@@ -498,17 +447,11 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
         <!-- CONTACTO -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                📱 Contacto
-            </div>
-
+            <div class="section-title">📱 Contacto</div>
             <div class="row">
 
                 <div class="col-md-6 mb-3">
@@ -522,17 +465,11 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
         <!-- EMERGENCIA -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                🚨 Contacto Emergencia
-            </div>
-
+            <div class="section-title">🚨 Contacto Emergencia</div>
             <div class="row">
 
                 <div class="col-md-4 mb-3">
@@ -551,17 +488,11 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
         <!-- SEGURIDAD SOCIAL -->
-
         <div class="form-section shadow">
-
-            <div class="section-title">
-                🏥 Seguridad Social
-            </div>
-
+            <div class="section-title">🏥 Seguridad Social</div>
             <div class="row">
 
                 <div class="col-md-3 mb-3">
@@ -600,15 +531,10 @@ if(isset($_POST['guardar'])){
                 </div>
 
             </div>
-
         </div>
 
-        <button type="submit"
-        name="guardar"
-        class="btn btn-primary btn-lg">
-
+        <button type="submit" name="guardar" class="btn btn-primary btn-lg">
             Guardar Empleado
-
         </button>
 
     </form>

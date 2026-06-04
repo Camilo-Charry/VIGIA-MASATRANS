@@ -9,48 +9,90 @@ if(!isset($_SESSION['id'])){
 
 include("../../config/database.php");
 
-$empleado_id = $_GET['id'];
+$id = $_GET['id'];
 
-$queryEmpleado = mysqli_query($conn,"
-SELECT * FROM empleados
-WHERE id='$empleado_id'
-");
-
+$queryEmpleado = mysqli_query($conn,"SELECT * FROM empleados WHERE id='$id'");
 $empleado = mysqli_fetch_assoc($queryEmpleado);
+
+$resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id' LIMIT 1");
+$vacunaExistente = mysqli_fetch_assoc($resultVacunas);
 
 if(isset($_POST['guardar'])){
 
-    $tipo_vacuna = $_POST['tipo_vacuna'];
-    $dosis = $_POST['dosis'];
-    $fecha_aplicacion = $_POST['fecha_aplicacion'];
+    $fv_fiebre_amarilla = $_POST['fv_fiebre_amarilla'];
+    $esquema_dosis_1 = $_POST['esquema_dosis_1'];
+    $esquema_dosis_2 = $_POST['esquema_dosis_2'];
+    $esquema_dosis_3 = $_POST['esquema_dosis_3'];
+    $esquema_dosis_4 = $_POST['esquema_dosis_4'];
+    $esquema_dosis_5 = $_POST['esquema_dosis_5'];
+    $covid_dosis_1 = $_POST['covid_dosis_1'];
+    $covid_dosis_2 = $_POST['covid_dosis_2'];
+    $covid_dosis_3 = $_POST['covid_dosis_3'];
+    $covid_dosis_4 = $_POST['covid_dosis_4'];
     $observaciones = $_POST['observaciones'];
 
-    $query = "
+    $pdf_vacuna = $vacunaExistente['pdf_vacuna'] ?? '';
 
-    INSERT INTO vacunas(
+    if(isset($_FILES['pdf_vacuna']) && $_FILES['pdf_vacuna']['size'] > 0){
+        if(!is_dir("../../uploads/vacunas/")){
+            mkdir("../../uploads/vacunas/", 0777, true);
+        }
+        $nombre_pdf = time() . '_' . $id . '_vacunas.pdf';
+        $destino = "../../uploads/vacunas/" . $nombre_pdf;
+        move_uploaded_file($_FILES['pdf_vacuna']['tmp_name'], $destino);
+        $pdf_vacuna = $nombre_pdf;
+    }
 
-        empleado_id,
-        tipo_vacuna,
-        dosis,
-        fecha_aplicacion,
-        observaciones
+    if($vacunaExistente){
+        mysqli_query($conn,"UPDATE vacunas_empleado SET
+            fv_fiebre_amarilla = '$fv_fiebre_amarilla',
+            esquema_dosis_1 = '$esquema_dosis_1',
+            esquema_dosis_2 = '$esquema_dosis_2',
+            esquema_dosis_3 = '$esquema_dosis_3',
+            esquema_dosis_4 = '$esquema_dosis_4',
+            esquema_dosis_5 = '$esquema_dosis_5',
+            covid_dosis_1 = '$covid_dosis_1',
+            covid_dosis_2 = '$covid_dosis_2',
+            covid_dosis_3 = '$covid_dosis_3',
+            covid_dosis_4 = '$covid_dosis_4',
+            observaciones = '$observaciones',
+            pdf_vacuna = '$pdf_vacuna'
+            WHERE empleado_id = '$id'
+        ");
+    } else {
+        mysqli_query($conn,"INSERT INTO vacunas_empleado(
+            empleado_id,
+            fv_fiebre_amarilla,
+            esquema_dosis_1,
+            esquema_dosis_2,
+            esquema_dosis_3,
+            esquema_dosis_4,
+            esquema_dosis_5,
+            covid_dosis_1,
+            covid_dosis_2,
+            covid_dosis_3,
+            covid_dosis_4,
+            observaciones,
+            pdf_vacuna
+        ) VALUES (
+            '$id',
+            '$fv_fiebre_amarilla',
+            '$esquema_dosis_1',
+            '$esquema_dosis_2',
+            '$esquema_dosis_3',
+            '$esquema_dosis_4',
+            '$esquema_dosis_5',
+            '$covid_dosis_1',
+            '$covid_dosis_2',
+            '$covid_dosis_3',
+            '$covid_dosis_4',
+            '$observaciones',
+            '$pdf_vacuna'
+        )");
+    }
 
-    ) VALUES (
-
-        '$empleado_id',
-        '$tipo_vacuna',
-        '$dosis',
-        '$fecha_aplicacion',
-        '$observaciones'
-
-    )
-
-    ";
-
-    mysqli_query($conn,$query);
-
-    header("Location: perfil.php?id=".$empleado_id);
-
+    header("Location: perfil.php?id=$id");
+    exit();
 }
 
 ?>
@@ -60,176 +102,187 @@ if(isset($_POST['guardar'])){
 <head>
 
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>Agregar Vacuna</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vacunas | VIGIA MASATRANS</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link rel="stylesheet"
-href="../../assets/css/style.css">
-
-<style>
-
-.form-card{
-    background:white;
-    border-radius:20px;
-    padding:30px;
-}
-
-</style>
+<link rel="stylesheet" href="../../assets/css/style.css">
 
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
-
-    <div class="logo">
+  <div class="sidebar-logo">
+    <div class="brand">
+      <div class="brand-logo"></div>
+      <span>
         VIGIA MASATRANS
+        <div class="brand-sub">Panel Corporativo</div>
+      </span>
     </div>
-
+  </div>
+  <nav class="sidebar-nav">
     <a href="../../dashboard.php">
-        📊 Dashboard
+      <span class="nav-icon">📊</span>
+      Dashboard
     </a>
-
-    <a href="empleados.php">
-        👷 Empleados
+    <a href="empleados.php" class="active">
+      <span class="nav-icon">👷</span>
+      Empleados
     </a>
-
+    <a href="../../logout.php">
+      <span class="nav-icon">🚪</span>
+      Cerrar sesión
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="../../dashboard.php">
+      <span class="nav-icon">ℹ️</span>
+      Control HSEQ
+    </a>
+  </div>
 </div>
 
+<!-- MAIN -->
 <div class="main-content">
 
-    <div class="mb-4">
+  <section class="page-header">
+    <div class="page-header-left">
+      <h1>💉 Registro de Vacunas</h1>
+      <p><?= $empleado['nombres'] ?> <?= $empleado['apellidos'] ?></p>
+    </div>
+    <div class="page-header-actions">
+      <a href="perfil.php?id=<?= $id ?>" class="btn btn-outline">← Volver al perfil</a>
+    </div>
+  </section>
 
-        <h2 class="fw-bold">
-            💉 Agregar Vacuna
-        </h2>
+  <form method="POST" enctype="multipart/form-data">
 
-        <small class="text-muted">
-
-            <?= $empleado['nombres'] ?>
-            <?= $empleado['apellidos'] ?>
-
-        </small>
-
+    <!-- FIEBRE AMARILLA -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <div class="panel-title">🟡 Fiebre Amarilla</div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Fecha dosis única</label>
+            <input type="date" name="fv_fiebre_amarilla" class="form-control"
+            value="<?= $vacunaExistente['fv_fiebre_amarilla'] ?? '' ?>">
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="form-card shadow">
+    <!-- ESQUEMA DE VACUNACION -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <div class="panel-title">💉 Esquema de Vacunación</div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Dosis 1</label>
+            <input type="date" name="esquema_dosis_1" class="form-control"
+            value="<?= $vacunaExistente['esquema_dosis_1'] ?? '' ?>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Dosis 2</label>
+            <input type="date" name="esquema_dosis_2" class="form-control"
+            value="<?= $vacunaExistente['esquema_dosis_2'] ?? '' ?>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Dosis 3</label>
+            <input type="date" name="esquema_dosis_3" class="form-control"
+            value="<?= $vacunaExistente['esquema_dosis_3'] ?? '' ?>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Dosis 4</label>
+            <input type="date" name="esquema_dosis_4" class="form-control"
+            value="<?= $vacunaExistente['esquema_dosis_4'] ?? '' ?>">
+          </div>
+          <div class="col-md-4 mb-3">
+            <label class="form-label">Dosis 5</label>
+            <input type="date" name="esquema_dosis_5" class="form-control"
+            value="<?= $vacunaExistente['esquema_dosis_5'] ?? '' ?>">
+          </div>
+        </div>
+      </div>
+    </div>
 
-        <form method="POST">
+    <!-- COVID -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <div class="panel-title">🦠 COVID-19</div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Dosis 1</label>
+            <input type="date" name="covid_dosis_1" class="form-control"
+            value="<?= $vacunaExistente['covid_dosis_1'] ?? '' ?>">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Dosis 2</label>
+            <input type="date" name="covid_dosis_2" class="form-control"
+            value="<?= $vacunaExistente['covid_dosis_2'] ?? '' ?>">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Dosis 3</label>
+            <input type="date" name="covid_dosis_3" class="form-control"
+            value="<?= $vacunaExistente['covid_dosis_3'] ?? '' ?>">
+          </div>
+          <div class="col-md-3 mb-3">
+            <label class="form-label">Dosis 4</label>
+            <input type="date" name="covid_dosis_4" class="form-control"
+            value="<?= $vacunaExistente['covid_dosis_4'] ?? '' ?>">
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label>
-                        Tipo vacuna
-                    </label>
-
-                    <select
-                    name="tipo_vacuna"
-                    class="form-control">
-
-                        <option>
-                            Fiebre Amarilla
-                        </option>
-
-                        <option>
-                            COVID-19
-                        </option>
-
-                        <option>
-                            Tétano
-                        </option>
-
-                        <option>
-                            Hepatitis B
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label>
-                        Dosis
-                    </label>
-
-                    <select
-                    name="dosis"
-                    class="form-control">
-
-                        <option>
-                            Dosis Única
-                        </option>
-
-                        <option>
-                            1ra Dosis
-                        </option>
-
-                        <option>
-                            2da Dosis
-                        </option>
-
-                        <option>
-                            3ra Dosis
-                        </option>
-
-                        <option>
-                            4ta Dosis
-                        </option>
-
-                        <option>
-                            5ta Dosis
-                        </option>
-
-                    </select>
-
-                </div>
-
-                <div class="col-md-6 mb-3">
-
-                    <label>
-                        Fecha aplicación
-                    </label>
-
-                    <input type="date"
-                    name="fecha_aplicacion"
-                    class="form-control">
-
-                </div>
-
-                <div class="col-md-12 mb-3">
-
-                    <label>
-                        Observaciones
-                    </label>
-
-                    <textarea
-                    name="observaciones"
-                    class="form-control"
-                    rows="4"></textarea>
-
-                </div>
-
+    <!-- OBSERVACIONES Y PDF -->
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <div class="panel-title">📋 Observaciones y Certificado</div>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Observaciones</label>
+            <textarea name="observaciones" class="form-control" rows="3"
+            placeholder="Observaciones adicionales..."><?= $vacunaExistente['observaciones'] ?? '' ?></textarea>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Certificado PDF</label>
+            <div class="upload-area" onclick="document.getElementById('inputPDF').click()">
+              <div id="textoUpload">
+                <?php if($vacunaExistente['pdf_vacuna'] ?? ''){ ?>
+                  📄 Ya tiene PDF — haz clic para reemplazarlo
+                <?php } else { ?>
+                  📄 Haz clic para subir el certificado de vacunas
+                <?php } ?>
+              </div>
+              <input type="file" id="inputPDF" name="pdf_vacuna" accept=".pdf"
+              style="display:none"
+              onchange="document.getElementById('textoUpload').innerHTML = '✅ ' + this.files[0].name">
             </div>
-
-            <button
-            type="submit"
-            name="guardar"
-            class="btn btn-primary">
-
-                Guardar Vacuna
-
-            </button>
-
-        </form>
-
+          </div>
+        </div>
+      </div>
     </div>
+
+    <div class="d-flex gap-3">
+      <button type="submit" name="guardar" class="btn btn-primary btn-lg">
+        💾 Guardar Vacunas
+      </button>
+      <a href="perfil.php?id=<?= $id ?>" class="btn btn-outline btn-lg">
+        Cancelar
+      </a>
+    </div>
+
+  </form>
 
 </div>
 

@@ -568,45 +568,85 @@ function cerrarPDF() {
         </div>
     </div>
 
-    <!-- VACUNAS -->
-    <div id="tab-vacunas" style="display:none;">
-        <div class="card info-card shadow">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5>💉 Vacunas registradas</h5>
-                    <a href="agregar_vacuna.php?id=<?= $id ?>" class="btn btn-primary">+ Agregar Vacuna</a>
+   <!-- VACUNAS -->
+<div id="tab-vacunas" style="display:none;">
+    <div class="card info-card shadow">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5>💉 Vacunas registradas</h5>
+                <div class="d-flex gap-2">
+                    <a href="agregar_vacuna.php?id=<?= $id ?>" class="btn btn-primary">
+                        ✏️ Registrar / Editar Vacunas
+                    </a>
+                    <?php if($resultVacunas && mysqli_num_rows(mysqli_query($conn,"SELECT id FROM vacunas_empleado WHERE empleado_id='$id'")) > 0){ ?>
+                        <a href="eliminar_vacuna.php?empleado_id=<?= $id ?>"
+                        class="btn btn-danger"
+                        onclick="return confirm('¿Eliminar todo el registro de vacunas?')">
+                            🗑️ Eliminar
+                        </a>
+                    <?php } ?>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Fiebre Amarilla</th>
-                                <th>Esquema Dosis 1</th>
-                                <th>Esquema Dosis 2</th>
-                                <th>Esquema Dosis 3</th>
-                                <th>COVID Dosis 1</th>
-                                <th>COVID Dosis 2</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php if($resultVacunas){ while($vacuna = mysqli_fetch_assoc($resultVacunas)){ ?>
-                            <tr>
-                                <td><?= $vacuna['fv_fiebre_amarilla'] ?></td>
-                                <td><?= $vacuna['esquema_dosis_1'] ?></td>
-                                <td><?= $vacuna['esquema_dosis_2'] ?></td>
-                                <td><?= $vacuna['esquema_dosis_3'] ?></td>
-                                <td><?= $vacuna['covid_dosis_1'] ?></td>
-                                <td><?= $vacuna['covid_dosis_2'] ?></td>
-                                <td><?= $vacuna['observaciones'] ?></td>
-                            </tr>
-                        <?php } } ?>
-                        </tbody>
-                    </table>
-                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Vacuna</th>
+                            <th>Dosis 1</th>
+                            <th>Dosis 2</th>
+                            <th>Dosis 3</th>
+                            <th>Dosis 4</th>
+                            <th>Dosis 5</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php
+                    $resultVacunas2 = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id'");
+                    if($resultVacunas2){ while($vacuna = mysqli_fetch_assoc($resultVacunas2)){ ?>
+                        <tr>
+                            <td><strong>Fiebre Amarilla</strong></td>
+                            <td colspan="5"><?= $vacuna['fv_fiebre_amarilla'] ?: '-' ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Esquema</strong></td>
+                            <td><?= $vacuna['esquema_dosis_1'] ?: '-' ?></td>
+                            <td><?= $vacuna['esquema_dosis_2'] ?: '-' ?></td>
+                            <td><?= $vacuna['esquema_dosis_3'] ?: '-' ?></td>
+                            <td><?= $vacuna['esquema_dosis_4'] ?: '-' ?></td>
+                            <td><?= $vacuna['esquema_dosis_5'] ?: '-' ?></td>
+                        </tr>
+                        <tr>
+                            <td><strong>COVID-19</strong></td>
+                            <td><?= $vacuna['covid_dosis_1'] ?: '-' ?></td>
+                            <td><?= $vacuna['covid_dosis_2'] ?: '-' ?></td>
+                            <td><?= $vacuna['covid_dosis_3'] ?: '-' ?></td>
+                            <td><?= $vacuna['covid_dosis_4'] ?: '-' ?></td>
+                            <td>-</td>
+                        </tr>
+                        <?php if($vacuna['observaciones']){ ?>
+                        <tr>
+                            <td><strong>Observaciones</strong></td>
+                            <td colspan="5"><?= $vacuna['observaciones'] ?></td>
+                        </tr>
+                        <?php } ?>
+                        <?php if($vacuna['pdf_vacuna']){ ?>
+                        <tr>
+                            <td><strong>Certificado</strong></td>
+                            <td colspan="5">
+                                <button onclick="verPDF('<?= $vacuna['pdf_vacuna'] ?>','vacunas')"
+                                class="btn btn-sm btn-primary">
+                                    📄 Ver PDF
+                                </button>
+                            </td>
+                        </tr>
+                        <?php } ?>
+                    <?php } } ?>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
     <!-- DOCUMENTOS -->
     <div id="tab-documentos" style="display:none;">
