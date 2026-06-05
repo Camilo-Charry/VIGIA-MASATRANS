@@ -32,6 +32,9 @@ $resultVacunas = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE emplea
 
 $resultDocumentos = mysqli_query($conn,"SELECT * FROM documentos_empleado WHERE empleado_id='$id' ORDER BY fecha_subida DESC");
 
+$resultAntecedentes = mysqli_query($conn,"SELECT * FROM antecedentes_empleado WHERE empleado_id='$id' LIMIT 1");
+$antecedentes = mysqli_fetch_assoc($resultAntecedentes);
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -135,11 +138,23 @@ $resultDocumentos = mysqli_query($conn,"SELECT * FROM documentos_empleado WHERE 
     cursor:pointer;
     font-weight:600;
 }
+.doc-item{
+    background:#f8fafc;
+    border-radius:12px;
+    padding:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    border:1px solid #e2e8f0;
+}
+.doc-item-info{ font-weight:600; color:#0f172a; font-size:14px; }
+.doc-item-sub{ color:#64748b; font-size:12px; }
 </style>
 
 <script>
 function showTab(tab) {
-    var tabs = ['general','laboral','licencia','seguridad','cursos','vacunas','documentos'];
+    var tabs = ['general','laboral','licencia','seguridad','cursos','vacunas','documentos','antecedentes'];
     for(var i = 0; i < tabs.length; i++){
         document.getElementById('tab-' + tabs[i]).style.display = 'none';
         document.getElementById('btn-' + tabs[i]).classList.remove('active');
@@ -149,7 +164,7 @@ function showTab(tab) {
 }
 
 function verPDF(archivo, carpeta) {
-    var ruta = carpeta ? '../../uploads/' + carpeta + '/' + archivo : '../../uploads/cursos/' + archivo;
+    var ruta = '../../uploads/' + carpeta + '/' + archivo;
     document.getElementById('iframePDF').src = ruta;
     document.getElementById('modalPDF').classList.add('open');
 }
@@ -214,7 +229,6 @@ function cerrarPDF() {
     <div class="profile-header shadow mb-4">
         <div class="row align-items-center">
             <div class="col-md-2 text-center">
-
                 <div class="profile-photo" onclick="document.getElementById('inputFoto').click()">
                     <?php if($empleado['foto']){ ?>
                         <img src="../../uploads/fotos/<?= $empleado['foto'] ?>"
@@ -224,13 +238,11 @@ function cerrarPDF() {
                     <?php } ?>
                     <div class="foto-overlay">📷 Cambiar</div>
                 </div>
-
                 <form method="POST" action="subir_foto.php" enctype="multipart/form-data" id="formFoto">
                     <input type="hidden" name="empleado_id" value="<?= $id ?>">
                     <input type="file" id="inputFoto" name="foto" accept="image/*" style="display:none"
                            onchange="document.getElementById('formFoto').submit()">
                 </form>
-
             </div>
             <div class="col-md-10">
                 <h2 class="fw-bold">
@@ -240,39 +252,31 @@ function cerrarPDF() {
                 <p class="mb-1"><?= $empleado['cargo'] ?></p>
                 <small>Cédula: <?= $empleado['cedula'] ?></small>
                 <div class="mt-3">
-
                     <?php if($empleado['rol_conductor'] == 'SI'){ ?>
                         <span class="badge bg-warning text-dark">Conductor</span>
                     <?php } ?>
-
+                    <?php if($empleado['area'] ?? ''){ ?>
+                        <span class="badge bg-info text-dark"><?= $empleado['area'] ?></span>
+                    <?php } ?>
                     <?php if($empleado['estado'] == 'ACTIVO'){ ?>
                         <span class="badge bg-success">ACTIVO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=INACTIVO"
                         class="btn btn-sm btn-warning ms-2"
-                        onclick="return confirm('¿Desactivar este empleado?')">
-                            ⏸ Desactivar
-                        </a>
+                        onclick="return confirm('¿Desactivar este empleado?')">⏸ Desactivar</a>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=RETIRADO"
                         class="btn btn-sm btn-danger ms-2"
-                        onclick="return confirm('¿Marcar como retirado?')">
-                            🚪 Retirar
-                        </a>
+                        onclick="return confirm('¿Marcar como retirado?')">🚪 Retirar</a>
                     <?php } elseif($empleado['estado'] == 'INACTIVO'){ ?>
                         <span class="badge bg-secondary">INACTIVO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
                         class="btn btn-sm btn-success ms-2"
-                        onclick="return confirm('¿Activar este empleado?')">
-                            ▶ Activar
-                        </a>
+                        onclick="return confirm('¿Activar este empleado?')">▶ Activar</a>
                     <?php } elseif($empleado['estado'] == 'RETIRADO'){ ?>
                         <span class="badge bg-danger">RETIRADO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
                         class="btn btn-sm btn-success ms-2"
-                        onclick="return confirm('¿Reactivar este empleado?')">
-                            ▶ Reactivar
-                        </a>
+                        onclick="return confirm('¿Reactivar este empleado?')">▶ Reactivar</a>
                     <?php } ?>
-
                 </div>
             </div>
         </div>
@@ -287,6 +291,7 @@ function cerrarPDF() {
         <button class="tab-btn" id="btn-cursos" onclick="showTab('cursos')">📚 Cursos</button>
         <button class="tab-btn" id="btn-vacunas" onclick="showTab('vacunas')">💉 Vacunas</button>
         <button class="tab-btn" id="btn-documentos" onclick="showTab('documentos')">📁 Documentos</button>
+        <button class="tab-btn" id="btn-antecedentes" onclick="showTab('antecedentes')">🔍 Antecedentes</button>
     </div>
 
     <!-- GENERAL -->
@@ -294,70 +299,60 @@ function cerrarPDF() {
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="row g-4">
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">RH</div>
                             <div class="info-value"><?= $empleado['rh'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Fecha nacimiento</div>
                             <div class="info-value"><?= $empleado['fecha_nacimiento'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Género</div>
                             <div class="info-value"><?= $empleado['genero'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-6">
                         <div class="info-item">
                             <div class="info-label">Dirección</div>
                             <div class="info-value"><?= $empleado['direccion'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">Ciudad</div>
                             <div class="info-value"><?= $empleado['ciudad_residencia'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">Departamento</div>
                             <div class="info-value"><?= $empleado['departamento_residencia'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Celular</div>
                             <div class="info-value"><?= $empleado['celular'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Correo</div>
                             <div class="info-value"><?= $empleado['correo'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Nivel Académico</div>
                             <div class="info-value"><?= $empleado['nivel_academico'] ?></div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -368,49 +363,48 @@ function cerrarPDF() {
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="row g-4">
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Cargo</div>
                             <div class="info-value"><?= $empleado['cargo'] ?></div>
                         </div>
                     </div>
-
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <div class="info-label">Área</div>
+                            <div class="info-value"><?= $empleado['area'] ?? 'Sin asignar' ?></div>
+                        </div>
+                    </div>
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Fecha ingreso</div>
                             <div class="info-value"><?= $empleado['fecha_ingreso'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Turno</div>
                             <div class="info-value"><?= $empleado['turno_trabajo'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Contrato</div>
                             <div class="info-value"><?= $empleado['tipo_contrato'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Base operación</div>
                             <div class="info-value"><?= $empleado['base_operacion'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">SIPLAFT</div>
                             <div class="info-value"><?= $empleado['siplaft'] ?></div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -421,28 +415,24 @@ function cerrarPDF() {
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="row g-4">
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Categoría</div>
                             <div class="info-value"><?= $licencia['categoria'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Vencimiento</div>
                             <div class="info-value"><?= $licencia['fecha_vencimiento'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Restricciones</div>
                             <div class="info-value"><?= $licencia['restricciones'] ?? 'Sin registro' ?></div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -453,56 +443,48 @@ function cerrarPDF() {
         <div class="card info-card shadow">
             <div class="card-body">
                 <div class="row g-4">
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">EPS</div>
                             <div class="info-value"><?= $empleado['eps'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">ARL</div>
                             <div class="info-value"><?= $empleado['arl'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">Pensión</div>
                             <div class="info-value"><?= $empleado['pension'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-3">
                         <div class="info-item">
                             <div class="info-label">Cesantías</div>
                             <div class="info-value"><?= $empleado['cesantias'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Caja compensación</div>
                             <div class="info-value"><?= $empleado['caja_compensacion'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Nivel riesgo</div>
                             <div class="info-value"><?= $empleado['nivel_riesgo'] ?></div>
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="info-item">
                             <div class="info-label">Salario base</div>
                             <div class="info-value">$<?= number_format($empleado['salario_base']) ?></div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -543,20 +525,15 @@ function cerrarPDF() {
                                 <td><span class="badge bg-<?= $badge ?>"><?= $estado ?></span></td>
                                 <td>
                                     <?php if($curso['pdf_soporte']){ ?>
-                                        <button onclick="verPDF('<?= $curso['pdf_soporte'] ?>','cursos')" class="btn btn-sm btn-primary">
-                                            📄 Ver PDF
-                                        </button>
+                                        <button onclick="verPDF('<?= $curso['pdf_soporte'] ?>','cursos')" class="btn btn-sm btn-primary">📄 Ver PDF</button>
                                     <?php } else { ?>
                                         <span class="text-muted">Sin soporte</span>
                                     <?php } ?>
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <a href="renovar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
-                                        class="btn btn-sm btn-warning">🔄 Renovar</a>
-                                        <a href="eliminar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>"
-                                        class="btn btn-sm btn-danger"
-                                        onclick="return confirm('¿Eliminar este curso?')">🗑️ Eliminar</a>
+                                        <a href="renovar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>" class="btn btn-sm btn-warning">🔄 Renovar</a>
+                                        <a href="eliminar_curso.php?curso_id=<?= $curso['id'] ?>&empleado_id=<?= $id ?>" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este curso?')">🗑️ Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -568,85 +545,78 @@ function cerrarPDF() {
         </div>
     </div>
 
-   <!-- VACUNAS -->
-<div id="tab-vacunas" style="display:none;">
-    <div class="card info-card shadow">
-        <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5>💉 Vacunas registradas</h5>
-                <div class="d-flex gap-2">
-                    <a href="agregar_vacuna.php?id=<?= $id ?>" class="btn btn-primary">
-                        ✏️ Registrar / Editar Vacunas
-                    </a>
-                    <?php if($resultVacunas && mysqli_num_rows(mysqli_query($conn,"SELECT id FROM vacunas_empleado WHERE empleado_id='$id'")) > 0){ ?>
-                        <a href="eliminar_vacuna.php?empleado_id=<?= $id ?>"
-                        class="btn btn-danger"
-                        onclick="return confirm('¿Eliminar todo el registro de vacunas?')">
-                            🗑️ Eliminar
-                        </a>
-                    <?php } ?>
+    <!-- VACUNAS -->
+    <div id="tab-vacunas" style="display:none;">
+        <div class="card info-card shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>💉 Vacunas registradas</h5>
+                    <div class="d-flex gap-2">
+                        <a href="agregar_vacuna.php?id=<?= $id ?>" class="btn btn-primary">✏️ Registrar / Editar</a>
+                        <?php
+                        $countVac = mysqli_num_rows(mysqli_query($conn,"SELECT id FROM vacunas_empleado WHERE empleado_id='$id'"));
+                        if($countVac > 0){ ?>
+                            <a href="eliminar_vacuna.php?empleado_id=<?= $id ?>" class="btn btn-danger" onclick="return confirm('¿Eliminar registro de vacunas?')">🗑️ Eliminar</a>
+                        <?php } ?>
+                    </div>
                 </div>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Vacuna</th>
-                            <th>Dosis 1</th>
-                            <th>Dosis 2</th>
-                            <th>Dosis 3</th>
-                            <th>Dosis 4</th>
-                            <th>Dosis 5</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    <?php
-                    $resultVacunas2 = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id'");
-                    if($resultVacunas2){ while($vacuna = mysqli_fetch_assoc($resultVacunas2)){ ?>
-                        <tr>
-                            <td><strong>Fiebre Amarilla</strong></td>
-                            <td colspan="5"><?= $vacuna['fv_fiebre_amarilla'] ?: '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Esquema</strong></td>
-                            <td><?= $vacuna['esquema_dosis_1'] ?: '-' ?></td>
-                            <td><?= $vacuna['esquema_dosis_2'] ?: '-' ?></td>
-                            <td><?= $vacuna['esquema_dosis_3'] ?: '-' ?></td>
-                            <td><?= $vacuna['esquema_dosis_4'] ?: '-' ?></td>
-                            <td><?= $vacuna['esquema_dosis_5'] ?: '-' ?></td>
-                        </tr>
-                        <tr>
-                            <td><strong>COVID-19</strong></td>
-                            <td><?= $vacuna['covid_dosis_1'] ?: '-' ?></td>
-                            <td><?= $vacuna['covid_dosis_2'] ?: '-' ?></td>
-                            <td><?= $vacuna['covid_dosis_3'] ?: '-' ?></td>
-                            <td><?= $vacuna['covid_dosis_4'] ?: '-' ?></td>
-                            <td>-</td>
-                        </tr>
-                        <?php if($vacuna['observaciones']){ ?>
-                        <tr>
-                            <td><strong>Observaciones</strong></td>
-                            <td colspan="5"><?= $vacuna['observaciones'] ?></td>
-                        </tr>
-                        <?php } ?>
-                        <?php if($vacuna['pdf_vacuna']){ ?>
-                        <tr>
-                            <td><strong>Certificado</strong></td>
-                            <td colspan="5">
-                                <button onclick="verPDF('<?= $vacuna['pdf_vacuna'] ?>','vacunas')"
-                                class="btn btn-sm btn-primary">
-                                    📄 Ver PDF
-                                </button>
-                            </td>
-                        </tr>
-                        <?php } ?>
-                    <?php } } ?>
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Vacuna</th>
+                                <th>Dosis 1</th>
+                                <th>Dosis 2</th>
+                                <th>Dosis 3</th>
+                                <th>Dosis 4</th>
+                                <th>Dosis 5</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <?php
+                        $resultVacunas2 = mysqli_query($conn,"SELECT * FROM vacunas_empleado WHERE empleado_id='$id'");
+                        if($resultVacunas2){ while($vacuna = mysqli_fetch_assoc($resultVacunas2)){ ?>
+                            <tr>
+                                <td><strong>Fiebre Amarilla</strong></td>
+                                <td colspan="5"><?= $vacuna['fv_fiebre_amarilla'] ?: '-' ?></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Esquema</strong></td>
+                                <td><?= $vacuna['esquema_dosis_1'] ?: '-' ?></td>
+                                <td><?= $vacuna['esquema_dosis_2'] ?: '-' ?></td>
+                                <td><?= $vacuna['esquema_dosis_3'] ?: '-' ?></td>
+                                <td><?= $vacuna['esquema_dosis_4'] ?: '-' ?></td>
+                                <td><?= $vacuna['esquema_dosis_5'] ?: '-' ?></td>
+                            </tr>
+                            <tr>
+                                <td><strong>COVID-19</strong></td>
+                                <td><?= $vacuna['covid_dosis_1'] ?: '-' ?></td>
+                                <td><?= $vacuna['covid_dosis_2'] ?: '-' ?></td>
+                                <td><?= $vacuna['covid_dosis_3'] ?: '-' ?></td>
+                                <td><?= $vacuna['covid_dosis_4'] ?: '-' ?></td>
+                                <td>-</td>
+                            </tr>
+                            <?php if($vacuna['observaciones']){ ?>
+                            <tr>
+                                <td><strong>Observaciones</strong></td>
+                                <td colspan="5"><?= $vacuna['observaciones'] ?></td>
+                            </tr>
+                            <?php } ?>
+                            <?php if($vacuna['pdf_vacuna']){ ?>
+                            <tr>
+                                <td><strong>Certificado</strong></td>
+                                <td colspan="5">
+                                    <button onclick="verPDF('<?= $vacuna['pdf_vacuna'] ?>','vacunas')" class="btn btn-sm btn-primary">📄 Ver PDF</button>
+                                </td>
+                            </tr>
+                            <?php } ?>
+                        <?php } } ?>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <!-- DOCUMENTOS -->
     <div id="tab-documentos" style="display:none;">
@@ -676,22 +646,11 @@ function cerrarPDF() {
                                     <div class="d-flex gap-2">
                                         <?php
                                         $ext = strtolower(pathinfo($doc['nombre_archivo'], PATHINFO_EXTENSION));
-                                        if(in_array($ext, ['pdf','jpg','jpeg','png'])){
-                                        ?>
-                                            <button onclick="verPDF('<?= $doc['nombre_archivo'] ?>','documentos')"
-                                            class="btn btn-sm btn-primary">
-                                                👁️ Ver
-                                            </button>
+                                        if(in_array($ext, ['pdf','jpg','jpeg','png'])){ ?>
+                                            <button onclick="verPDF('<?= $doc['nombre_archivo'] ?>','documentos')" class="btn btn-sm btn-primary">👁️ Ver</button>
                                         <?php } ?>
-                                        <a href="../../uploads/documentos/<?= $doc['nombre_archivo'] ?>"
-                                        download class="btn btn-sm btn-success">
-                                            ⬇️ Descargar
-                                        </a>
-                                        <a href="eliminar_documento.php?doc_id=<?= $doc['id'] ?>&empleado_id=<?= $id ?>"
-                                        class="btn btn-sm btn-danger"
-                                        onclick="return confirm('¿Eliminar este documento?')">
-                                            🗑️ Eliminar
-                                        </a>
+                                        <a href="../../uploads/documentos/<?= $doc['nombre_archivo'] ?>" download class="btn btn-sm btn-success">⬇️ Descargar</a>
+                                        <a href="eliminar_documento.php?doc_id=<?= $doc['id'] ?>&empleado_id=<?= $id ?>" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este documento?')">🗑️ Eliminar</a>
                                     </div>
                                 </td>
                             </tr>
@@ -699,6 +658,93 @@ function cerrarPDF() {
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANTECEDENTES -->
+    <div id="tab-antecedentes" style="display:none;">
+        <div class="card info-card shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5>🔍 Antecedentes y SARLAFT</h5>
+                    <a href="antecedentes.php?id=<?= $id ?>" class="btn btn-primary">✏️ Gestionar Antecedentes</a>
+                </div>
+
+                <!-- SARLAFT STATUS -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <div class="info-label">SARLAFT</div>
+                            <div class="info-value">
+                                <?php if($antecedentes['pdf_sarlaft'] ?? ''){ ?>
+                                    <span class="badge bg-success">✅ Firmado</span>
+                                    <button onclick="verPDF('<?= $antecedentes['pdf_sarlaft'] ?>','antecedentes')" class="btn btn-sm btn-primary ms-2">📄 Ver</button>
+                                <?php } else { ?>
+                                    <span class="badge bg-danger">❌ Pendiente</span>
+                                <?php } ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <div class="info-label">Fecha firma SARLAFT</div>
+                            <div class="info-value"><?= $antecedentes['fecha_sarlaft'] ?? 'Sin registro' ?></div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="info-item">
+                            <div class="info-label">Vence</div>
+                            <div class="info-value">
+                                <?php if($antecedentes['fecha_vencimiento_sarlaft'] ?? ''){ ?>
+                                    <?php
+                                    $diasVence = (strtotime($antecedentes['fecha_vencimiento_sarlaft']) - strtotime(date('Y-m-d'))) / 86400;
+                                    if($diasVence < 0){ echo '<span class="badge bg-danger">VENCIDO</span>'; }
+                                    elseif($diasVence <= 30){ echo '<span class="badge bg-warning">POR VENCER</span>'; }
+                                    else { echo '<span class="badge bg-success">VIGENTE</span>'; }
+                                    ?>
+                                    — <?= $antecedentes['fecha_vencimiento_sarlaft'] ?>
+                                <?php } else { ?>
+                                    Sin registro
+                                <?php } ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANTECEDENTES DOCS -->
+                <?php
+                $docs = [
+                    'pdf_policia' => '🚔 Policía Nacional',
+                    'pdf_procuraduria' => '⚖️ Procuraduría',
+                    'pdf_simit' => '🚗 SIMIT',
+                    'pdf_contraloria' => '🏛️ Contraloría',
+                    'pdf_runt' => '🚛 RUNT',
+                    'pdf_lista_clinton' => '🌐 Lista Clinton',
+                    'pdf_judicatura' => '👨‍⚖️ Judicatura',
+                    'pdf_actualizacion' => '🔄 Actualización Antecedentes'
+                ];
+                ?>
+                <div class="row g-3">
+                <?php foreach($docs as $campo => $nombre){ ?>
+                    <div class="col-md-6">
+                        <div class="doc-item">
+                            <div>
+                                <div class="doc-item-info"><?= $nombre ?></div>
+                            </div>
+                            <div class="d-flex gap-2 align-items-center">
+                                <?php if($antecedentes[$campo] ?? ''){ ?>
+                                    <span class="badge bg-success">✅</span>
+                                    <button onclick="verPDF('<?= $antecedentes[$campo] ?>','antecedentes')" class="btn btn-sm btn-primary">📄 Ver</button>
+                                <?php } else { ?>
+                                    <span class="badge bg-danger">❌ Pendiente</span>
+                                <?php } ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php } ?>
+                </div>
+
             </div>
         </div>
     </div>
