@@ -140,11 +140,12 @@ $totalAdministrativos = mysqli_num_rows($rAdministrativos);
             <h2 class="fw-bold">Gestión de Empleados</h2>
             <small class="text-muted">Administración general del personal</small>
         </div>
-        <div class="top-actions">
-            <a href="crear.php" class="btn btn-primary">+ Nuevo Empleado</a>
-            <a href="exportar_excel.php" class="btn btn-success">📤 Exportar Excel</a>
-            <a href="exportar_pdf.php" class="btn btn-danger">📄 Exportar PDF</a>
-        </div>
+       <div class="top-actions">
+    <a href="crear.php" class="btn btn-primary">+ Nuevo Empleado</a>
+    <a href="importar_excel.php" class="btn btn-success">📥 Importar Excel</a>
+    <a href="exportar_excel.php" class="btn btn-success">📤 Exportar Excel</a>
+    <a href="exportar_pdf.php" class="btn btn-danger">📄 Exportar PDF</a>
+</div>
     </div>
 
     <!-- BUSCADOR -->
