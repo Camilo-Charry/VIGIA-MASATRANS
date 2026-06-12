@@ -36,6 +36,13 @@ AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
 $result_vacunas = mysqli_query($conn,"SELECT id FROM vacunas_empleado");
 $vacunas = $result_vacunas ? mysqli_num_rows($result_vacunas) : 0;
 
+// KPI inducción: cuántos activos tienen inducción vigente
+$ind_vigentes = mysqli_num_rows(mysqli_query($conn,"
+SELECT i.id FROM inducciones i
+INNER JOIN empleados e ON i.empleado_id = e.id
+WHERE e.estado = 'ACTIVO' AND i.fecha_vencimiento >= CURDATE()
+"));
+
 // ALERTAS CURSOS
 $alertas_cursos = mysqli_query($conn,"
 SELECT empleados.nombres, empleados.apellidos, empleados.id as emp_id,
@@ -48,7 +55,7 @@ ORDER BY empleado_cursos.fecha_vencimiento ASC
 LIMIT 50
 ");
 
-// ALERTAS VACUNAS - verifica si vencio (1 año desde ultima dosis)
+// ALERTAS VACUNAS
 $alertas_vacunas = mysqli_query($conn,"
 SELECT empleados.nombres, empleados.apellidos, empleados.id as emp_id,
 vacunas_empleado.fv_fiebre_amarilla,
@@ -64,7 +71,7 @@ WHERE empleados.estado = 'ACTIVO'
 ORDER BY empleados.nombres ASC
 ");
 
-// ALERTAS SARLAFT - vence 1 año desde fecha firma
+// ALERTAS SARLAFT
 $alertas_sarlaft = mysqli_query($conn,"
 SELECT empleados.nombres, empleados.apellidos, empleados.id as emp_id,
 antecedentes_empleado.fecha_sarlaft,
@@ -83,14 +90,18 @@ WHERE empleados.estado = 'ACTIVO'
 ORDER BY empleados.nombres ASC
 ");
 
-// ALERTAS REINDUCCION - vence 1 año desde fecha reinduccion
+// ALERTAS INDUCCIÓN — ahora lee de la tabla inducciones (datos reales)
 $alertas_reinduccion = mysqli_query($conn,"
-SELECT empleados.nombres, empleados.apellidos, empleados.id as emp_id,
-empleados.reinduccion,
-DATE_ADD(empleados.reinduccion, INTERVAL 1 YEAR) as vencimiento_reinduccion
-FROM empleados
-WHERE empleados.estado = 'ACTIVO'
-ORDER BY empleados.reinduccion ASC
+SELECT
+    e.nombres, e.apellidos, e.id AS emp_id,
+    i.fecha_realizacion,
+    i.fecha_vencimiento,
+    i.documento_pdf,
+    i.observaciones
+FROM empleados e
+LEFT JOIN inducciones i ON e.id = i.empleado_id
+WHERE e.estado = 'ACTIVO'
+ORDER BY i.fecha_vencimiento ASC, e.nombres ASC
 ");
 
 ?>
@@ -132,10 +143,10 @@ ORDER BY empleados.reinduccion ASC
 .alerta-tab-btn:not(.active) .count-badge {
     background:rgba(0,0,0,0.1);
 }
-.estado-vencido { color:#dc2626; font-weight:700; font-size:11px; }
-.estado-por-vencer { color:#d97706; font-weight:700; font-size:11px; }
-.estado-vigente { color:#059669; font-weight:700; font-size:11px; }
-.estado-sin-registro { color:#94a3b8; font-weight:600; font-size:11px; }
+.estado-vencido     { color:#dc2626; font-weight:700; font-size:11px; }
+.estado-por-vencer  { color:#d97706; font-weight:700; font-size:11px; }
+.estado-vigente     { color:#059669; font-weight:700; font-size:11px; }
+.estado-sin-registro{ color:#94a3b8; font-weight:600; font-size:11px; }
 </style>
 
 <script>
@@ -164,7 +175,6 @@ function showAlerta(tab) {
       </span>
     </div>
   </div>
-
   <nav class="sidebar-nav">
     <a href="dashboard.php" class="active">
       <span class="nav-icon">📊</span>
@@ -179,7 +189,6 @@ function showAlerta(tab) {
       Cerrar sesión
     </a>
   </nav>
-
   <div class="sidebar-footer">
     <a href="dashboard.php">
       <span class="nav-icon">ℹ️</span>
@@ -247,10 +256,10 @@ function showAlerta(tab) {
     <div class="kpi-card green">
       <div class="d-flex justify-content-between align-items-start">
         <div>
-          <div class="kpi-label">Vacunas Registradas</div>
-          <div class="kpi-value"><?= $vacunas ?></div>
+          <div class="kpi-label">Inducciones Vigentes</div>
+          <div class="kpi-value"><?= $ind_vigentes ?></div>
         </div>
-        <div class="kpi-icon">💉</div>
+        <div class="kpi-icon">📋</div>
       </div>
     </div>
 
@@ -304,7 +313,7 @@ function showAlerta(tab) {
         </button>
         <button class="alerta-tab-btn" id="abtn-reinduccion" onclick="showAlerta('reinduccion')">
           🔄 Inducción / Reinducción
-          <span class="count-badge"><?= $empleados ?></span>
+          <span class="count-badge"><?= $ind_vigentes ?></span>
         </button>
       </div>
     </div>
@@ -369,9 +378,6 @@ function showAlerta(tab) {
         </thead>
         <tbody>
         <?php while($vac = mysqli_fetch_assoc($alertas_vacunas)){
-            $hoy = date('Y-m-d');
-
-            // Última dosis esquema
             $dosis_esquema = array_filter([
                 $vac['esquema_dosis_1'],
                 $vac['esquema_dosis_2'],
@@ -379,20 +385,17 @@ function showAlerta(tab) {
             ]);
             $ultima_esquema = !empty($dosis_esquema) ? max($dosis_esquema) : '';
 
-            // Última dosis covid
             $dosis_covid = array_filter([
                 $vac['covid_dosis_1'],
                 $vac['covid_dosis_2'],
             ]);
             $ultima_covid = !empty($dosis_covid) ? max($dosis_covid) : '';
 
-            // Estado fiebre amarilla
             $estado_fiebre = $vac['fv_fiebre_amarilla'] ? 'REGISTRADA' : 'SIN REGISTRO';
-            $clase_fiebre = $vac['fv_fiebre_amarilla'] ? 'estado-vigente' : 'estado-sin-registro';
+            $clase_fiebre  = $vac['fv_fiebre_amarilla'] ? 'estado-vigente' : 'estado-sin-registro';
 
-            // Estado general
-            $tiene_todo = $vac['fv_fiebre_amarilla'] && $ultima_esquema && $ultima_covid;
-            $estado_general = $tiene_todo ? 'COMPLETO' : 'INCOMPLETO';
+            $tiene_todo    = $vac['fv_fiebre_amarilla'] && $ultima_esquema && $ultima_covid;
+            $estado_general= $tiene_todo ? 'COMPLETO' : 'INCOMPLETO';
             $clase_general = $tiene_todo ? 'estado-vigente' : 'estado-por-vencer';
         ?>
           <tr>
@@ -428,33 +431,31 @@ function showAlerta(tab) {
         <?php while($sar = mysqli_fetch_assoc($alertas_sarlaft)){
             $hoy = date('Y-m-d');
 
-            // Estado SARLAFT
             if(empty($sar['fecha_sarlaft'])){
                 $estado_sar = 'SIN REGISTRO';
-                $clase_sar = 'estado-sin-registro';
-                $vence_sar = '-';
+                $clase_sar  = 'estado-sin-registro';
+                $vence_sar  = '-';
             } else {
-                $venc = $sar['fecha_vencimiento_sarlaft'];
+                $venc     = $sar['fecha_vencimiento_sarlaft'];
                 $dias_sar = (strtotime($venc) - strtotime($hoy)) / 86400;
                 if($dias_sar < 0){
                     $estado_sar = 'VENCIDO';
-                    $clase_sar = 'estado-vencido';
+                    $clase_sar  = 'estado-vencido';
                 } elseif($dias_sar <= 30){
                     $estado_sar = 'POR VENCER';
-                    $clase_sar = 'estado-por-vencer';
+                    $clase_sar  = 'estado-por-vencer';
                 } else {
                     $estado_sar = 'VIGENTE';
-                    $clase_sar = 'estado-vigente';
+                    $clase_sar  = 'estado-vigente';
                 }
                 $vence_sar = $venc;
             }
 
-            // Contar antecedentes completos
             $docs = ['pdf_policia','pdf_procuraduria','pdf_simit','pdf_contraloria','pdf_runt','pdf_lista_clinton','pdf_judicatura','pdf_actualizacion'];
             $completos = 0;
             foreach($docs as $d){ if(!empty($sar[$d])) $completos++; }
             $total_docs = count($docs);
-            $clase_docs = $completos == $total_docs ? 'estado-vigente' : ($completos > 0 ? 'estado-por-vencer' : 'estado-sin-registro');
+            $clase_docs = ($completos == $total_docs) ? 'estado-vigente' : ($completos > 0 ? 'estado-por-vencer' : 'estado-sin-registro');
         ?>
           <tr>
             <td>
@@ -479,14 +480,15 @@ function showAlerta(tab) {
       </table>
     </div>
 
-    <!-- TAB REINDUCCION -->
+    <!-- TAB INDUCCIÓN / REINDUCCIÓN -->
     <div id="alerta-reinduccion" style="display:none;" class="table-wrapper">
       <table class="vigia-table">
         <thead>
           <tr>
             <th>Empleado</th>
-            <th>Fecha Inducción/Reinducción</th>
-            <th>Vence</th>
+            <th>Fecha realización</th>
+            <th>Fecha vencimiento</th>
+            <th>Documento PDF</th>
             <th>Estado</th>
             <th>Días</th>
           </tr>
@@ -495,25 +497,25 @@ function showAlerta(tab) {
         <?php while($rein = mysqli_fetch_assoc($alertas_reinduccion)){
             $hoy = date('Y-m-d');
 
-            if(empty($rein['reinduccion']) || $rein['reinduccion'] == '0000-00-00'){
-                $estado_r = 'SIN REGISTRO';
-                $clase_r = 'estado-sin-registro';
-                $vence_r = '-';
+            if(empty($rein['fecha_realizacion'])){
+                $estado_r   = 'SIN REGISTRO';
+                $clase_r    = 'estado-sin-registro';
+                $vence_r    = '-';
                 $dias_txt_r = '-';
             } else {
-                $vence_r = $rein['vencimiento_reinduccion'];
-                $dias_r = (strtotime($vence_r) - strtotime($hoy)) / 86400;
+                $vence_r  = $rein['fecha_vencimiento'];
+                $dias_r   = (strtotime($vence_r) - strtotime($hoy)) / 86400;
                 if($dias_r < 0){
-                    $estado_r = 'VENCIDA';
-                    $clase_r = 'estado-vencido';
+                    $estado_r   = 'VENCIDA';
+                    $clase_r    = 'estado-vencido';
                     $dias_txt_r = abs(round($dias_r)) . " días vencida";
                 } elseif($dias_r <= 30){
-                    $estado_r = 'POR VENCER';
-                    $clase_r = 'estado-por-vencer';
+                    $estado_r   = 'POR VENCER';
+                    $clase_r    = 'estado-por-vencer';
                     $dias_txt_r = round($dias_r) . " días restantes";
                 } else {
-                    $estado_r = 'VIGENTE';
-                    $clase_r = 'estado-vigente';
+                    $estado_r   = 'VIGENTE';
+                    $clase_r    = 'estado-vigente';
                     $dias_txt_r = round($dias_r) . " días restantes";
                 }
             }
@@ -524,8 +526,22 @@ function showAlerta(tab) {
                 <?= $rein['nombres'] ?> <?= $rein['apellidos'] ?>
               </a>
             </td>
-            <td style="font-size:12px;"><?= $rein['reinduccion'] && $rein['reinduccion'] != '0000-00-00' ? $rein['reinduccion'] : '-' ?></td>
-            <td style="font-size:12px;"><?= $vence_r ?></td>
+            <td style="font-size:12px;">
+              <?= !empty($rein['fecha_realizacion']) ? date('d/m/Y', strtotime($rein['fecha_realizacion'])) : '-' ?>
+            </td>
+            <td style="font-size:12px;">
+              <?= !empty($rein['fecha_vencimiento']) ? date('d/m/Y', strtotime($rein['fecha_vencimiento'])) : '-' ?>
+            </td>
+            <td style="font-size:12px;">
+              <?php if(!empty($rein['documento_pdf'])){ ?>
+                <a href="uploads/inducciones/<?= $rein['documento_pdf'] ?>" target="_blank"
+                   style="color:#dc2626; font-weight:600; text-decoration:none;">
+                  📄 Ver PDF
+                </a>
+              <?php } else { ?>
+                <span class="estado-sin-registro">Sin documento</span>
+              <?php } ?>
+            </td>
             <td><span class="<?= $clase_r ?>"><?= $estado_r ?></span></td>
             <td style="font-size:12px; color:#64748b;"><?= $dias_txt_r ?></td>
           </tr>
