@@ -36,7 +36,6 @@ AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
 $result_vacunas = mysqli_query($conn,"SELECT id FROM vacunas_empleado");
 $vacunas = $result_vacunas ? mysqli_num_rows($result_vacunas) : 0;
 
-// KPI inducción: cuántos activos tienen inducción vigente
 $ind_vigentes = mysqli_num_rows(mysqli_query($conn,"
 SELECT i.id FROM inducciones i
 INNER JOIN empleados e ON i.empleado_id = e.id
@@ -90,7 +89,7 @@ WHERE empleados.estado = 'ACTIVO'
 ORDER BY empleados.nombres ASC
 ");
 
-// ALERTAS INDUCCIÓN — ahora lee de la tabla inducciones (datos reales)
+// ALERTAS INDUCCIÓN — lee de tabla inducciones real
 $alertas_reinduccion = mysqli_query($conn,"
 SELECT
     e.nombres, e.apellidos, e.id AS emp_id,
@@ -101,7 +100,7 @@ SELECT
 FROM empleados e
 LEFT JOIN inducciones i ON e.id = i.empleado_id
 WHERE e.estado = 'ACTIVO'
-ORDER BY i.fecha_vencimiento ASC, e.nombres ASC
+ORDER BY i.fecha_realizacion DESC, e.nombres ASC
 ");
 
 ?>
@@ -140,26 +139,85 @@ ORDER BY i.fecha_vencimiento ASC, e.nombres ASC
     border-radius:99px;
     font-size:11px;
 }
-.alerta-tab-btn:not(.active) .count-badge {
-    background:rgba(0,0,0,0.1);
-}
-.estado-vencido     { color:#dc2626; font-weight:700; font-size:11px; }
-.estado-por-vencer  { color:#d97706; font-weight:700; font-size:11px; }
-.estado-vigente     { color:#059669; font-weight:700; font-size:11px; }
-.estado-sin-registro{ color:#94a3b8; font-weight:600; font-size:11px; }
-</style>
+.alerta-tab-btn:not(.active) .count-badge { background:rgba(0,0,0,0.1); }
+.estado-vencido      { color:#dc2626; font-weight:700; font-size:11px; }
+.estado-por-vencer   { color:#d97706; font-weight:700; font-size:11px; }
+.estado-vigente      { color:#059669; font-weight:700; font-size:11px; }
+.estado-sin-registro { color:#94a3b8; font-weight:600; font-size:11px; }
 
-<script>
-function showAlerta(tab) {
-    var tabs = ['cursos','vacunas','sarlaft','reinduccion'];
-    for(var i = 0; i < tabs.length; i++){
-        document.getElementById('alerta-' + tabs[i]).style.display = 'none';
-        document.getElementById('abtn-' + tabs[i]).classList.remove('active');
-    }
-    document.getElementById('alerta-' + tab).style.display = 'block';
-    document.getElementById('abtn-' + tab).classList.add('active');
+/* Botón PDF inducción */
+.btn-ver-pdf {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:#fff1f2;
+    color:#dc2626;
+    border:1.5px solid #fecaca;
+    border-radius:8px;
+    padding:5px 11px;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    text-decoration:none;
+    transition:all 0.15s;
 }
-</script>
+.btn-ver-pdf:hover {
+    background:#fee2e2;
+    border-color:#f87171;
+    color:#b91c1c;
+}
+.btn-ver-pdf .pdf-ico {
+    font-size:16px;
+    line-height:1;
+}
+
+/* Modal visor PDF */
+.modal-pdf .modal-content {
+    border:none;
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+}
+.modal-pdf .modal-header {
+    background:#0a1628;
+    color:white;
+    padding:16px 22px;
+    border:none;
+}
+.modal-pdf .modal-header .modal-title {
+    font-size:15px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+.modal-pdf .btn-close {
+    filter:invert(1);
+    opacity:0.8;
+}
+.modal-pdf .modal-body {
+    padding:0;
+    background:#f1f5f9;
+}
+.modal-pdf iframe {
+    width:100%;
+    height:78vh;
+    border:none;
+    display:block;
+}
+.modal-pdf .modal-footer {
+    background:#f8fafc;
+    border-top:1px solid #e2e8f0;
+    padding:12px 20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+.modal-pdf .modal-footer small {
+    color:#94a3b8;
+    font-size:12px;
+}
+</style>
 
 </head>
 <body>
@@ -519,6 +577,9 @@ function showAlerta(tab) {
                     $dias_txt_r = round($dias_r) . " días restantes";
                 }
             }
+
+            $nombre_empleado = htmlspecialchars($rein['nombres'] . ' ' . $rein['apellidos'], ENT_QUOTES);
+            $pdf_url = !empty($rein['documento_pdf']) ? 'uploads/inducciones/' . $rein['documento_pdf'] : '';
         ?>
           <tr>
             <td>
@@ -532,12 +593,13 @@ function showAlerta(tab) {
             <td style="font-size:12px;">
               <?= !empty($rein['fecha_vencimiento']) ? date('d/m/Y', strtotime($rein['fecha_vencimiento'])) : '-' ?>
             </td>
-            <td style="font-size:12px;">
-              <?php if(!empty($rein['documento_pdf'])){ ?>
-                <a href="uploads/inducciones/<?= $rein['documento_pdf'] ?>" target="_blank"
-                   style="color:#dc2626; font-weight:600; text-decoration:none;">
-                  📄 Ver PDF
-                </a>
+            <td>
+              <?php if($pdf_url){ ?>
+                <button class="btn-ver-pdf"
+                  onclick="abrirPdfInduccion('<?= $pdf_url ?>', '<?= $nombre_empleado ?>')">
+                  <span class="pdf-ico">📄</span>
+                  Ver PDF
+                </button>
               <?php } else { ?>
                 <span class="estado-sin-registro">Sin documento</span>
               <?php } ?>
@@ -552,7 +614,59 @@ function showAlerta(tab) {
 
   </section>
 
+</div><!-- /main-content -->
+
+<!-- ============ MODAL VISOR PDF INDUCCIÓN ============ -->
+<div class="modal fade modal-pdf" id="modalVisorPdf" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span style="font-size:20px;">📄</span>
+          <span id="pdf_modal_titulo">Documento de Inducción</span>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <iframe id="pdf_modal_iframe" src="" title="Visor PDF Inducción"></iframe>
+      </div>
+      <div class="modal-footer">
+        <small>Si el PDF no carga correctamente, usa el botón para abrirlo en una nueva pestaña.</small>
+        <a id="pdf_modal_link" href="#" target="_blank" class="btn btn-sm btn-outline-danger">
+          🔗 Abrir en nueva pestaña
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
+<!-- ==================================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function showAlerta(tab) {
+    var tabs = ['cursos','vacunas','sarlaft','reinduccion'];
+    for(var i = 0; i < tabs.length; i++){
+        document.getElementById('alerta-' + tabs[i]).style.display = 'none';
+        document.getElementById('abtn-' + tabs[i]).classList.remove('active');
+    }
+    document.getElementById('alerta-' + tab).style.display = 'block';
+    document.getElementById('abtn-' + tab).classList.add('active');
+}
+
+function abrirPdfInduccion(url, nombre) {
+    document.getElementById('pdf_modal_titulo').textContent = 'Inducción — ' + nombre;
+    document.getElementById('pdf_modal_iframe').src = url;
+    document.getElementById('pdf_modal_link').href = url;
+    var modal = new bootstrap.Modal(document.getElementById('modalVisorPdf'));
+    modal.show();
+}
+
+// Limpiar iframe al cerrar el modal para liberar memoria
+document.getElementById('modalVisorPdf').addEventListener('hidden.bs.modal', function(){
+    document.getElementById('pdf_modal_iframe').src = '';
+});
+</script>
 
 </body>
 </html>

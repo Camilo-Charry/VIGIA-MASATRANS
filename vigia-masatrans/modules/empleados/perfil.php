@@ -35,6 +35,21 @@ $resultDocumentos = mysqli_query($conn,"SELECT * FROM documentos_empleado WHERE 
 $resultAntecedentes = mysqli_query($conn,"SELECT * FROM antecedentes_empleado WHERE empleado_id='$id' LIMIT 1");
 $antecedentes = mysqli_fetch_assoc($resultAntecedentes);
 
+// URL del perfil para el QR
+$url_perfil = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http')
+    . '://' . $_SERVER['HTTP_HOST']
+    . '/vigia-masatrans/modules/empleados/perfil.php?id=' . $id;
+
+// Foto en base64 para el carnet (para que funcione al imprimir/descargar)
+$foto_base64 = '';
+if(!empty($empleado['foto'])){
+    $ruta_foto = '../../uploads/fotos/' . $empleado['foto'];
+    if(file_exists($ruta_foto)){
+        $tipo = mime_content_type($ruta_foto);
+        $foto_base64 = 'data:' . $tipo . ';base64,' . base64_encode(file_get_contents($ruta_foto));
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -150,6 +165,281 @@ $antecedentes = mysqli_fetch_assoc($resultAntecedentes);
 }
 .doc-item-info{ font-weight:600; color:#0f172a; font-size:14px; }
 .doc-item-sub{ color:#64748b; font-size:12px; }
+
+/* ===== MODAL CARNET ===== */
+#modalCarnet {
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.75);
+    z-index:9998;
+    align-items:center;
+    justify-content:center;
+    backdrop-filter: blur(4px);
+}
+#modalCarnet.open { display:flex; }
+
+.carnet-wrapper {
+    background:white;
+    border-radius:20px;
+    padding:28px;
+    max-width:520px;
+    width:95%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+}
+
+.carnet-actions {
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+}
+
+.btn-carnet-imprimir {
+    background:#0f172a;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:9px 20px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:all 0.15s;
+}
+.btn-carnet-imprimir:hover { background:#1e293b; }
+
+.btn-carnet-descargar {
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:10px;
+    padding:9px 20px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition:all 0.15s;
+}
+.btn-carnet-descargar:hover { background:#1d4ed8; }
+
+.btn-carnet-cerrar {
+    background:#f1f5f9;
+    color:#334155;
+    border:none;
+    border-radius:10px;
+    padding:9px 20px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.15s;
+}
+.btn-carnet-cerrar:hover { background:#e2e8f0; }
+
+/* ===== DISEÑO DEL CARNET ===== */
+#carnet-digital {
+    width:100%;
+    background:white;
+    border-radius:16px;
+    overflow:hidden;
+    border:1px solid #e2e8f0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.carnet-top {
+    background:linear-gradient(135deg, #0f172a 0%, #1e40af 100%);
+    padding:18px 22px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.carnet-logo-area {
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.carnet-logo-circle {
+    width:40px; height:40px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.15);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:20px;
+    border:2px solid rgba(255,255,255,0.3);
+}
+
+.carnet-empresa {
+    color:white;
+}
+.carnet-empresa strong {
+    display:block;
+    font-size:13px;
+    letter-spacing:0.5px;
+}
+.carnet-empresa span {
+    font-size:10px;
+    color:rgba(255,255,255,0.65);
+    letter-spacing:1px;
+    text-transform:uppercase;
+}
+
+.carnet-tipo-badge {
+    background:rgba(255,255,255,0.15);
+    color:white;
+    font-size:10px;
+    font-weight:700;
+    padding:4px 12px;
+    border-radius:99px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    border:1px solid rgba(255,255,255,0.25);
+}
+
+.carnet-body {
+    padding:22px;
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+}
+
+.carnet-foto-col {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    flex-shrink:0;
+}
+
+.carnet-foto {
+    width:90px; height:90px;
+    border-radius:12px;
+    object-fit:cover;
+    border:3px solid #e2e8f0;
+    background:#dbeafe;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:32px;
+    font-weight:700;
+    color:#1d4ed8;
+    overflow:hidden;
+}
+.carnet-foto img { width:100%; height:100%; object-fit:cover; border-radius:9px; }
+
+.carnet-qr-box {
+    width:72px; height:72px;
+    border-radius:8px;
+    overflow:hidden;
+    border:2px solid #e2e8f0;
+    background:#f8fafc;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.carnet-qr-box img { width:100%; height:100%; display:block; }
+
+.carnet-qr-label {
+    font-size:9px;
+    color:#94a3b8;
+    text-align:center;
+    letter-spacing:0.5px;
+}
+
+.carnet-info-col {
+    flex:1;
+}
+
+.carnet-nombre {
+    font-size:17px;
+    font-weight:700;
+    color:#0f172a;
+    line-height:1.2;
+    margin-bottom:2px;
+}
+
+.carnet-cargo {
+    font-size:12px;
+    color:#2563eb;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:14px;
+}
+
+.carnet-fields {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+
+.carnet-field {
+    background:#f8fafc;
+    border-radius:8px;
+    padding:8px 10px;
+}
+
+.carnet-field-label {
+    font-size:9px;
+    color:#94a3b8;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-bottom:2px;
+}
+
+.carnet-field-value {
+    font-size:12px;
+    font-weight:600;
+    color:#1e293b;
+}
+
+.carnet-bottom {
+    background:#f8fafc;
+    border-top:1px solid #e2e8f0;
+    padding:10px 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.carnet-bottom-left {
+    font-size:10px;
+    color:#94a3b8;
+}
+
+.carnet-estado-badge {
+    font-size:10px;
+    font-weight:700;
+    padding:4px 12px;
+    border-radius:99px;
+    letter-spacing:0.5px;
+}
+.carnet-estado-activo { background:#d1fae5; color:#065f46; }
+.carnet-estado-inactivo { background:#f1f5f9; color:#475569; }
+.carnet-estado-retirado { background:#fee2e2; color:#991b1b; }
+
+/* ===== PRINT ===== */
+@media print {
+    body * { visibility: hidden !important; }
+    #carnet-digital, #carnet-digital * { visibility: visible !important; }
+    #carnet-digital {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 9cm !important;
+        margin: auto;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+}
 </style>
 
 <script>
@@ -172,6 +462,42 @@ function verPDF(archivo, carpeta) {
 function cerrarPDF() {
     document.getElementById('modalPDF').classList.remove('open');
     document.getElementById('iframePDF').src = '';
+}
+
+function abrirCarnet() {
+    document.getElementById('modalCarnet').classList.add('open');
+}
+
+function cerrarCarnet() {
+    document.getElementById('modalCarnet').classList.remove('open');
+}
+
+function imprimirCarnet() {
+    window.print();
+}
+
+function descargarCarnet() {
+    var btn = document.querySelector('.btn-carnet-descargar');
+    btn.textContent = '⏳ Generando...';
+    btn.disabled = true;
+
+    html2canvas(document.getElementById('carnet-digital'), {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+    }).then(function(canvas) {
+        var link = document.createElement('a');
+        link.download = 'carnet_<?= $empleado['cedula'] ?>.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        btn.innerHTML = '⬇️ Descargar imagen';
+        btn.disabled = false;
+    }).catch(function(){
+        btn.innerHTML = '⬇️ Descargar imagen';
+        btn.disabled = false;
+        alert('Error al generar imagen. Intenta imprimir en su lugar.');
+    });
 }
 </script>
 
@@ -211,7 +537,7 @@ function cerrarPDF() {
   </div>
 </div>
 
-<!-- MODAL PDF -->
+<!-- MODAL PDF DOCUMENTOS -->
 <div id="modalPDF">
     <div class="modal-pdf-box">
         <div class="modal-pdf-header">
@@ -221,6 +547,112 @@ function cerrarPDF() {
         <iframe id="iframePDF" src="" width="100%" height="100%" style="border:none;"></iframe>
     </div>
 </div>
+
+<!-- MODAL CARNET DIGITAL -->
+<div id="modalCarnet">
+    <div class="carnet-wrapper">
+
+        <!-- Acciones -->
+        <div class="carnet-actions">
+            <button class="btn-carnet-cerrar" onclick="cerrarCarnet()">✕ Cerrar</button>
+            <button class="btn-carnet-imprimir" onclick="imprimirCarnet()">🖨️ Imprimir</button>
+            <button class="btn-carnet-descargar" onclick="descargarCarnet()">⬇️ Descargar imagen</button>
+        </div>
+
+        <!-- CARNET -->
+        <div id="carnet-digital">
+
+            <!-- Encabezado -->
+            <div class="carnet-top">
+                <div class="carnet-logo-area">
+                    <div class="carnet-logo-circle">🚛</div>
+                    <div class="carnet-empresa">
+                        <strong>MASATRANS</strong>
+                        <span>Identificación HSEQ</span>
+                    </div>
+                </div>
+                <div class="carnet-tipo-badge">
+                    <?= strtoupper($empleado['area'] ?? 'Personal') ?>
+                </div>
+            </div>
+
+            <!-- Cuerpo -->
+            <div class="carnet-body">
+
+                <!-- Columna foto + QR -->
+                <div class="carnet-foto-col">
+                    <div class="carnet-foto">
+                        <?php if($foto_base64){ ?>
+                            <img src="<?= $foto_base64 ?>" alt="Foto empleado">
+                        <?php } else { ?>
+                            <?= strtoupper(substr($empleado['nombres'],0,1)) ?>
+                        <?php } ?>
+                    </div>
+
+                    <!-- QR generado con API pública -->
+                    <div class="carnet-qr-box">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=<?= urlencode($url_perfil) ?>"
+                             alt="QR Perfil" crossorigin="anonymous">
+                    </div>
+                    <div class="carnet-qr-label">Escanear perfil</div>
+                </div>
+
+                <!-- Columna datos -->
+                <div class="carnet-info-col">
+                    <div class="carnet-nombre">
+                        <?= $empleado['nombres'] ?> <?= $empleado['apellidos'] ?>
+                    </div>
+                    <div class="carnet-cargo"><?= $empleado['cargo'] ?></div>
+
+                    <div class="carnet-fields">
+                        <div class="carnet-field">
+                            <div class="carnet-field-label">Cédula</div>
+                            <div class="carnet-field-value"><?= $empleado['cedula'] ?></div>
+                        </div>
+                        <div class="carnet-field">
+                            <div class="carnet-field-label">RH</div>
+                            <div class="carnet-field-value"><?= $empleado['rh'] ?: '—' ?></div>
+                        </div>
+                        <div class="carnet-field">
+                            <div class="carnet-field-label">ARL</div>
+                            <div class="carnet-field-value"><?= $empleado['arl'] ?: '—' ?></div>
+                        </div>
+                        <div class="carnet-field">
+                            <div class="carnet-field-label">Ingreso</div>
+                            <div class="carnet-field-value">
+                                <?= $empleado['fecha_ingreso'] ? date('d/m/Y', strtotime($empleado['fecha_ingreso'])) : '—' ?>
+                            </div>
+                        </div>
+                        <div class="carnet-field" style="grid-column:1/3;">
+                            <div class="carnet-field-label">EPS</div>
+                            <div class="carnet-field-value"><?= $empleado['eps'] ?: '—' ?></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Pie del carnet -->
+            <div class="carnet-bottom">
+                <div class="carnet-bottom-left">
+                    VIGIA MASATRANS · Sistema HSEQ
+                </div>
+                <?php
+                $estadoClase = 'carnet-estado-activo';
+                if($empleado['estado'] == 'INACTIVO') $estadoClase = 'carnet-estado-inactivo';
+                if($empleado['estado'] == 'RETIRADO') $estadoClase = 'carnet-estado-retirado';
+                ?>
+                <span class="carnet-estado-badge <?= $estadoClase ?>">
+                    <?= $empleado['estado'] ?>
+                </span>
+            </div>
+
+        </div>
+        <!-- /carnet-digital -->
+
+    </div>
+</div>
+<!-- /modal carnet -->
 
 <!-- MAIN -->
 <div class="main-content">
@@ -251,7 +683,7 @@ function cerrarPDF() {
                 </h2>
                 <p class="mb-1"><?= $empleado['cargo'] ?></p>
                 <small>Cédula: <?= $empleado['cedula'] ?></small>
-                <div class="mt-3">
+                <div class="mt-3 d-flex flex-wrap gap-2 align-items-center">
                     <?php if($empleado['rol_conductor'] == 'SI'){ ?>
                         <span class="badge bg-warning text-dark">Conductor</span>
                     <?php } ?>
@@ -261,22 +693,28 @@ function cerrarPDF() {
                     <?php if($empleado['estado'] == 'ACTIVO'){ ?>
                         <span class="badge bg-success">ACTIVO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=INACTIVO"
-                        class="btn btn-sm btn-warning ms-2"
+                        class="btn btn-sm btn-warning"
                         onclick="return confirm('¿Desactivar este empleado?')">⏸ Desactivar</a>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=RETIRADO"
-                        class="btn btn-sm btn-danger ms-2"
+                        class="btn btn-sm btn-danger"
                         onclick="return confirm('¿Marcar como retirado?')">🚪 Retirar</a>
                     <?php } elseif($empleado['estado'] == 'INACTIVO'){ ?>
                         <span class="badge bg-secondary">INACTIVO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
-                        class="btn btn-sm btn-success ms-2"
+                        class="btn btn-sm btn-success"
                         onclick="return confirm('¿Activar este empleado?')">▶ Activar</a>
                     <?php } elseif($empleado['estado'] == 'RETIRADO'){ ?>
                         <span class="badge bg-danger">RETIRADO</span>
                         <a href="cambiar_estado.php?id=<?= $id ?>&estado=ACTIVO"
-                        class="btn btn-sm btn-success ms-2"
+                        class="btn btn-sm btn-success"
                         onclick="return confirm('¿Reactivar este empleado?')">▶ Reactivar</a>
                     <?php } ?>
+
+                    <!-- BOTÓN CARNET -->
+                    <button onclick="abrirCarnet()"
+                        style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:10px; padding:7px 18px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:8px; box-shadow:0 4px 14px rgba(37,99,235,0.4);">
+                        🪪 Carnet Digital
+                    </button>
                 </div>
             </div>
         </div>
@@ -671,7 +1109,6 @@ function cerrarPDF() {
                     <a href="antecedentes.php?id=<?= $id ?>" class="btn btn-primary">✏️ Gestionar Antecedentes</a>
                 </div>
 
-                <!-- SARLAFT STATUS -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <div class="info-item">
@@ -712,17 +1149,16 @@ function cerrarPDF() {
                     </div>
                 </div>
 
-                <!-- ANTECEDENTES DOCS -->
                 <?php
                 $docs = [
-                    'pdf_policia' => '🚔 Policía Nacional',
+                    'pdf_policia'      => '🚔 Policía Nacional',
                     'pdf_procuraduria' => '⚖️ Procuraduría',
-                    'pdf_simit' => '🚗 SIMIT',
-                    'pdf_contraloria' => '🏛️ Contraloría',
-                    'pdf_runt' => '🚛 RUNT',
-                    'pdf_lista_clinton' => '🌐 Lista Clinton',
-                    'pdf_judicatura' => '👨‍⚖️ Judicatura',
-                    'pdf_actualizacion' => '🔄 Actualización Antecedentes'
+                    'pdf_simit'        => '🚗 SIMIT',
+                    'pdf_contraloria'  => '🏛️ Contraloría',
+                    'pdf_runt'         => '🚛 RUNT',
+                    'pdf_lista_clinton'=> '🌐 Lista Clinton',
+                    'pdf_judicatura'   => '👨‍⚖️ Judicatura',
+                    'pdf_actualizacion'=> '🔄 Actualización Antecedentes'
                 ];
                 ?>
                 <div class="row g-3">
@@ -749,7 +1185,10 @@ function cerrarPDF() {
         </div>
     </div>
 
-</div>
+</div><!-- /main-content -->
+
+<!-- html2canvas para descarga como imagen -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 </body>
 </html>
